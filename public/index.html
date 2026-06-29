@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Bookmark Manager</title>
+    <style>
+        /* VANILLA CSS & FLEXBOX */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; color: #333; }
+
+        /* Flexbox in action for the input bar! */
+        .input-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+
+        .bookmark-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .bookmark-card a { text-decoration: none; color: #007bff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔖 Smart Bookmarks</h1>
+
+    <div class="input-group">
+        <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)">
+        <button onclick="saveBookmark()">Save</button>
+    </div>
+
+    <div id="bookmarksList">
+        <!-- Bookmarks will be injected here by JavaScript -->
+    </div>
+</div>
+
+<script>
+    async function loadBookmarks() {
+        const response = await fetch('http://localhost:3000/api/bookmarks');
+        const bookmarks = await response.json();
+
+        const listDiv = document.getElementById('bookmarksList');
+        listDiv.innerHTML = '';
+
+        bookmarks.forEach(bm => {
+            // Added a Delete button passing the bookmark's ID
+            listDiv.innerHTML += `
+                <div class="bookmark-card" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <a href="${bm.url}" target="_blank">${bm.title}</a>
+                        <p style="margin: 5px 0 0; font-size: 12px; color: #666;">${bm.url}</p>
+                    </div>
+                    <button style="background: #dc3545; padding: 5px 10px;" onclick="deleteBookmark('${bm.id}')">🗑️</button>
+                </div>
+            `;
+        });
+    }
+
+    async function saveBookmark() {
+        const urlValue = document.getElementById('urlInput').value;
+        if (!urlValue) return;
+
+        await fetch('http://localhost:3000/api/bookmarks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: urlValue })
+        });
+
+        document.getElementById('urlInput').value = '';
+        loadBookmarks();
+    }
+
+    // NEW FUNCTION: Send a DELETE request
+    async function deleteBookmark(id) {
+        await fetch(`http://localhost:3000/api/bookmarks/${id}`, {
+            method: 'DELETE'
+        });
+        loadBookmarks(); // Reload list after deleting
+    }
+
+    loadBookmarks();
+</script>
+
+</body>
+</html>

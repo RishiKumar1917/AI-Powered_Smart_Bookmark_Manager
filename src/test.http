@@ -1,0 +1,14 @@
+### Get Health Status
+GET http://localhost:3000/api/health
+
+### Get all Bookmarks
+GET http://localhost:3000/api/bookmarks
+
+### Create a new Bookmark
+POST http://localhost:3000/api/bookmarks
+Content-Type: application/json
+
+{
+  "url": "https://www.apple.com"
+}
+
