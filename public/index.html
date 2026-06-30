@@ -395,6 +395,92 @@
             100% { transform: translateY(-6px) rotate(4deg); }
         }
 
+        /* Additional category animations */
+        .steam-line {
+            animation: riseSteam 2s infinite linear;
+            transform-origin: bottom center;
+        }
+        @keyframes riseSteam {
+            0% { opacity: 0; transform: translateY(5px) scaleX(0.8); }
+            50% { opacity: 0.8; transform: translateY(-5px) scaleX(1.2); }
+            100% { opacity: 0; transform: translateY(-15px) scaleX(0.8); }
+        }
+
+        .music-note {
+            animation: pulseMusic 3s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+        @keyframes pulseMusic {
+            0% { transform: scale(0.9) rotate(-5deg); }
+            100% { transform: scale(1.05) rotate(5deg); }
+        }
+
+        .gamepad {
+            animation: driftGamepad 4s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+        @keyframes driftGamepad {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-8px) rotate(8deg); }
+        }
+
+        .briefcase {
+            animation: swingBriefcase 4s ease-in-out infinite alternate;
+            transform-origin: top center;
+        }
+        @keyframes swingBriefcase {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+
+        .heart-pulse {
+            animation: heartBeat 1.2s ease-in-out infinite;
+            transform-origin: center;
+        }
+        @keyframes heartBeat {
+            0% { transform: scale(0.9); }
+            30% { transform: scale(1.05); }
+            45% { transform: scale(0.95); }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(0.9); }
+        }
+
+        .design-palette {
+            animation: rotatePalette 10s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes rotatePalette {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .newspaper {
+            animation: flipNews 5s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+        @keyframes flipNews {
+            0% { transform: scale(0.95) rotate(-3deg); }
+            100% { transform: scale(1.02) rotate(3deg); }
+        }
+
+        .clock-group {
+            animation: floatClock 4s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+        @keyframes floatClock {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-7px); }
+        }
+
+        .yt-icon {
+            animation: pulseYt 2s ease-in-out infinite alternate;
+            transform-origin: center;
+        }
+        @keyframes pulseYt {
+            0% { transform: scale(0.95); }
+            100% { transform: scale(1.05); }
+        }
+
         /* ONBOARDING SCREEN */
         #onboardingScreen { display: none; }
         .onboarding-title {
@@ -668,6 +754,154 @@
               </linearGradient>
             </defs>
           </svg>
+        `,
+        cooking: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 25 50 L 75 50 L 70 80 A 10 10 0 0 1 60 90 L 40 90 A 10 10 0 0 1 30 80 Z" fill="url(#cookGrad)" stroke="#141419" stroke-width="2" />
+            <rect x="20" y="45" width="60" height="6" rx="3" fill="#141419" />
+            <path class="steam-line" d="M 35 35 Q 38 25 35 15" fill="none" stroke="#ff7eb3" stroke-width="2" stroke-linecap="round" />
+            <path class="steam-line" d="M 50 35 Q 53 25 50 15" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" />
+            <path class="steam-line" d="M 65 35 Q 68 25 65 15" fill="none" stroke="#ff7eb3" stroke-width="2" stroke-linecap="round" />
+            <defs>
+              <linearGradient id="cookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        music: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="music-note">
+              <circle cx="35" cy="70" r="10" fill="url(#musicGrad)" />
+              <circle cx="70" cy="60" r="10" fill="url(#musicGrad)" />
+              <path d="M 45 70 L 45 30 L 80 20 L 80 60" fill="none" stroke="url(#musicGrad)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" />
+              <path d="M 45 40 L 80 30" fill="none" stroke="url(#musicGrad)" stroke-width="4" />
+            </g>
+            <defs>
+              <linearGradient id="musicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        gaming: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="gamepad">
+              <rect x="15" y="30" width="70" height="40" rx="20" fill="url(#gameGrad)" stroke="#141419" stroke-width="2" />
+              <path d="M 30 45 L 30 55 M 25 50 L 35 50" stroke="#141419" stroke-width="3" stroke-linecap="round" />
+              <circle cx="65" cy="45" r="3" fill="#141419" />
+              <circle cx="71" cy="50" r="3" fill="#141419" />
+              <circle cx="65" cy="55" r="3" fill="#141419" />
+              <circle cx="42" cy="55" r="6" fill="#141419" opacity="0.3" />
+              <circle cx="58" cy="55" r="6" fill="#141419" opacity="0.3" />
+            </g>
+            <defs>
+              <linearGradient id="gameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        jobs: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="briefcase">
+              <rect x="20" y="35" width="60" height="45" rx="6" fill="url(#jobGrad)" stroke="#141419" stroke-width="2" />
+              <path d="M 40 35 L 40 25 A 5 5 0 0 1 45 20 L 55 20 A 5 5 0 0 1 60 25 L 60 35" fill="none" stroke="url(#jobGrad)" stroke-width="3" />
+              <rect x="44" y="50" width="12" height="8" rx="2" fill="#141419" />
+            </g>
+            <defs>
+              <linearGradient id="jobGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        fitness: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="heart-pulse">
+              <path d="M 50 30 C 50 30 40 15 25 25 C 10 35 20 60 50 80 C 80 60 90 35 75 25 C 60 15 50 30 50 30 Z" fill="url(#fitGrad)" stroke="#141419" stroke-width="2" />
+            </g>
+            <defs>
+              <linearGradient id="fitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        design: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="design-palette">
+              <circle cx="50" cy="50" r="35" fill="url(#designGrad)" stroke="#141419" stroke-width="2" />
+              <circle cx="35" cy="40" r="5" fill="#09090b" />
+              <circle cx="50" cy="32" r="5" fill="#09090b" />
+              <circle cx="65" cy="40" r="5" fill="#09090b" />
+              <circle cx="58" cy="60" r="5" fill="#09090b" />
+              <circle cx="38" cy="62" r="8" fill="#09090b" />
+            </g>
+            <defs>
+              <linearGradient id="designGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        news: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="newspaper">
+              <rect x="15" y="20" width="70" height="60" rx="4" fill="url(#newsGrad)" stroke="#141419" stroke-width="2" />
+              <line x1="25" y1="35" x2="75" y2="35" stroke="#141419" stroke-width="3" stroke-linecap="round" />
+              <line x1="25" y1="48" x2="55" y2="48" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+              <line x1="25" y1="58" x2="50" y2="58" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+              <line x1="25" y1="68" x2="65" y2="68" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+              <rect x="60" y="45" width="15" height="18" rx="2" fill="#141419" opacity="0.4" />
+            </g>
+            <defs>
+              <linearGradient id="newsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        productivity: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="clock-group">
+              <circle cx="50" cy="50" r="35" fill="url(#prodGrad)" stroke="#141419" stroke-width="2" />
+              <line x1="50" y1="50" x2="50" y2="30" stroke="#141419" stroke-width="3" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s" repeatCount="indefinite" />
+              </line>
+              <line x1="50" y1="50" x2="68" y2="50" stroke="#141419" stroke-width="3" stroke-linecap="round">
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="60s" repeatCount="indefinite" />
+              </line>
+              <circle cx="50" cy="50" r="3" fill="#141419" />
+            </g>
+            <defs>
+              <linearGradient id="prodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
+        `,
+        youtube: `
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <g class="yt-icon">
+              <rect x="15" y="25" width="70" height="50" rx="10" fill="url(#ytGrad)" stroke="#141419" stroke-width="2" />
+              <path d="M 42 40 L 62 50 L 42 60 Z" fill="#141419" />
+            </g>
+            <defs>
+              <linearGradient id="ytGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff758c" />
+                <stop offset="100%" stop-color="#a78bfa" />
+              </linearGradient>
+            </defs>
+          </svg>
         `
     };
 
@@ -687,12 +921,39 @@
         } else if (normalized.includes('dsa') || normalized.includes('dev') || normalized.includes('ai') || normalized.includes('science')) {
             leftTheme = 'tech';
             rightTheme = 'tech';
-        } else if (normalized.includes('travel') || normalized.includes('fit') || normalized.includes('cook') || normalized.includes('music')) {
+        } else if (normalized.includes('travel')) {
             leftTheme = 'travel';
             rightTheme = 'travel';
-        } else if (normalized.includes('finance') || normalized.includes('job')) {
+        } else if (normalized.includes('finance')) {
             leftTheme = 'finance';
             rightTheme = 'finance';
+        } else if (normalized.includes('job')) {
+            leftTheme = 'jobs';
+            rightTheme = 'jobs';
+        } else if (normalized.includes('cook')) {
+            leftTheme = 'cooking';
+            rightTheme = 'cooking';
+        } else if (normalized.includes('music')) {
+            leftTheme = 'music';
+            rightTheme = 'music';
+        } else if (normalized.includes('game') || normalized.includes('gaming')) {
+            leftTheme = 'gaming';
+            rightTheme = 'gaming';
+        } else if (normalized.includes('fit') || normalized.includes('fitness')) {
+            leftTheme = 'fitness';
+            rightTheme = 'fitness';
+        } else if (normalized.includes('design')) {
+            leftTheme = 'design';
+            rightTheme = 'design';
+        } else if (normalized.includes('news')) {
+            leftTheme = 'news';
+            rightTheme = 'news';
+        } else if (normalized.includes('prod') || normalized.includes('productivity')) {
+            leftTheme = 'productivity';
+            rightTheme = 'productivity';
+        } else if (normalized.includes('youtube') || normalized.includes('video')) {
+            leftTheme = 'youtube';
+            rightTheme = 'youtube';
         } else {
             leftTheme = 'reading';
             rightTheme = 'reading';
