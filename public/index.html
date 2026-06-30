@@ -294,7 +294,144 @@
             border-color: rgba(239, 68, 68, 0.3);
         }
 
-        #loadingMsg { text-align: center; color: var(--accent); margin-bottom: 20px; display: none; font-weight: 600; letter-spacing: 1px;}
+        #loadingContainer { 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 20px; 
+            gap: 15px; 
+        }
+        
+        #loadingContainer span {
+            color: var(--accent); 
+            font-weight: 600; 
+            letter-spacing: 1px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 126, 179, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ONBOARDING SCREEN */
+        #onboardingScreen { display: none; }
+        .onboarding-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: var(--text-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .onboarding-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 35px;
+        }
+        .interests-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+        .interest-chip {
+            padding: 14px 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .interest-chip:hover {
+            border-color: rgba(255,255,255,0.3);
+            color: white;
+        }
+        .interest-chip.selected {
+            background: var(--accent-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(255, 117, 140, 0.3);
+        }
+        .custom-interest-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .custom-interest-row input {
+            flex: 1;
+        }
+        .custom-interest-row button {
+            padding: 14px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .custom-interest-row button:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .get-started-btn {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            box-shadow: 0 8px 20px rgba(255, 117, 140, 0.3);
+            transition: all 0.3s;
+        }
+        .get-started-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(255, 117, 140, 0.4);
+        }
+        .settings-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.3s;
+        }
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: rotate(45deg);
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -324,28 +461,42 @@
         </div>
     </div>
 
+    <!-- ONBOARDING SCREEN -->
+    <div id="onboardingScreen">
+        <h2 class="onboarding-title">Choose Your Interests</h2>
+        <p class="onboarding-subtitle">Pick topics that matter to you. The AI will use these to organize your bookmarks.</p>
+        <div class="interests-grid" id="interestsGrid"></div>
+        <div class="custom-interest-row">
+            <input type="text" id="customInterestInput" placeholder="Add a custom interest..." aria-label="Add a custom interest">
+            <button onclick="addCustomInterest()">+ Add</button>
+        </div>
+        <button class="get-started-btn" onclick="saveInterests()">Get Started →</button>
+    </div>
+
     <!-- MAIN DASHBOARD -->
     <div id="dashboard">
         <div class="header-actions">
-            <span class="user-greeting" id="userGreeting">Hello, User</span>
-            <button class="logout-btn" onclick="logout()">Sign Out</button>
+            <span id="userGreeting">Hello, User</span>
+            <div class="header-right">
+                <button class="settings-btn" onclick="openSettings()" title="Edit Interests">⚙️</button>
+                <button class="logout-btn" onclick="logout()">Sign Out</button>
+            </div>
         </div>
 
         <div class="input-group">
-            <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)">
+            <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)" aria-label="Bookmark URL">
             <button class="primary-btn" onclick="saveBookmark()">Save Link</button>
         </div>
 
-        <p id="loadingMsg">✨ AI is analyzing the page...</p>
+        <div id="loadingContainer">
+            <div class="spinner"></div>
+            <span>✨ AI is analyzing the page...</span>
+        </div>
 
-        <input type="text" id="searchInput" placeholder="🔍 Search by title, url, or summary..." onkeyup="applyFilters()" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+        <input type="text" id="searchInput" placeholder="🔍 Search by title, url, or summary..." onkeyup="applyFilters()" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;" aria-label="Search bookmarks">
         
         <div class="filters" id="categoryFilters">
-            <button class="filter-btn active" onclick="setCategoryFilter('All')">All</button>
-            <button class="filter-btn" onclick="setCategoryFilter('DSA')">DSA</button>
-            <button class="filter-btn" onclick="setCategoryFilter('Jobs')">Jobs</button>
-            <button class="filter-btn" onclick="setCategoryFilter('Reading')">Reading</button>
-            <button class="filter-btn" onclick="setCategoryFilter('General')">General</button>
+            <!-- Dynamic filters injected by JS -->
         </div>
 
         <div id="bookmarksList">
@@ -357,17 +508,26 @@
 <script>
     let allBookmarks = [];
     let currentFilter = 'All';
+    let userCategories = [];
+
+    // --- Suggested interests for onboarding ---
+    const suggestedInterests = [
+        'DSA', 'Jobs', 'Reading', 'AI / ML', 'Web Dev',
+        'Finance', 'Fitness', 'Cooking', 'Music',
+        'Gaming', 'Travel', 'Design', 'Science',
+        'News', 'Productivity'
+    ];
+    let selectedInterests = new Set();
 
     // --- AUTHENTICATION LOGIC ---
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
     if (token) {
-        showDashboard();
+        initAfterLogin();
     }
 
     async function handleCredentialResponse(response) {
-        // Send Google token to our backend to verify and get a JWT
         try {
             const res = await fetch('/api/auth/google', {
                 method: 'POST',
@@ -379,12 +539,8 @@
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // ALSO save to cookie so the Chrome Extension can read it!
-                // We use SameSite=None and Secure so the extension can read it cross-site
                 document.cookie = `token=${data.token}; path=/; max-age=604800; Secure; SameSite=None`;
-                
-                showDashboard();
+                initAfterLogin();
             } else {
                 alert("Login failed!");
             }
@@ -393,16 +549,123 @@
         }
     }
 
+    async function initAfterLogin() {
+        document.getElementById('loginScreen').style.display = 'none';
+
+        // Check if user has categories set up
+        try {
+            const res = await apiFetch('/api/categories');
+            const data = await res.json();
+            userCategories = data.categories || [];
+        } catch(e) {
+            userCategories = [];
+        }
+
+        if (userCategories.length === 0) {
+            // New user — show onboarding
+            showOnboarding();
+        } else {
+            showDashboard();
+        }
+    }
+
+    // --- ONBOARDING LOGIC ---
+    function showOnboarding() {
+        document.getElementById('onboardingScreen').style.display = 'block';
+        document.getElementById('dashboard').style.display = 'none';
+        renderInterestsGrid();
+    }
+
+    function renderInterestsGrid() {
+        const grid = document.getElementById('interestsGrid');
+        grid.innerHTML = '';
+        const allOptions = [...new Set([...suggestedInterests, ...selectedInterests])];
+        allOptions.forEach(interest => {
+            const chip = document.createElement('div');
+            chip.className = 'interest-chip' + (selectedInterests.has(interest) ? ' selected' : '');
+            chip.innerText = interest;
+            chip.onclick = () => toggleInterest(interest);
+            grid.appendChild(chip);
+        });
+    }
+
+    function toggleInterest(interest) {
+        if (selectedInterests.has(interest)) {
+            selectedInterests.delete(interest);
+        } else {
+            selectedInterests.add(interest);
+        }
+        renderInterestsGrid();
+    }
+
+    function addCustomInterest() {
+        const input = document.getElementById('customInterestInput');
+        const value = input.value.trim();
+        if (value && !selectedInterests.has(value)) {
+            selectedInterests.add(value);
+            renderInterestsGrid();
+            input.value = '';
+        }
+    }
+
+    async function saveInterests() {
+        if (selectedInterests.size === 0) {
+            alert('Please select at least one interest!');
+            return;
+        }
+        const categories = [...selectedInterests];
+        // Always include 'General' as fallback
+        if (!categories.includes('General')) categories.push('General');
+
+        await apiFetch('/api/categories', {
+            method: 'POST',
+            body: JSON.stringify({ categories })
+        });
+
+        userCategories = categories;
+        document.getElementById('onboardingScreen').style.display = 'none';
+        showDashboard();
+    }
+
+    function openSettings() {
+        // Pre-select current categories
+        selectedInterests = new Set(userCategories.filter(c => c !== 'General'));
+        document.getElementById('dashboard').style.display = 'none';
+        showOnboarding();
+    }
+
+    // --- DASHBOARD LOGIC ---
     function showDashboard() {
         document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('onboardingScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         
         const storedUser = JSON.parse(localStorage.getItem('user'));
         if(storedUser) {
             document.getElementById('userGreeting').innerText = `Welcome, ${storedUser.name}`;
         }
-        
+
+        renderFilterButtons();
         loadBookmarks();
+    }
+
+    function renderFilterButtons() {
+        const container = document.getElementById('categoryFilters');
+        container.innerHTML = '';
+
+        const allBtn = document.createElement('button');
+        allBtn.className = 'filter-btn active';
+        allBtn.innerText = 'All';
+        allBtn.onclick = () => setCategoryFilter('All');
+        container.appendChild(allBtn);
+
+        userCategories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-btn';
+            btn.innerText = cat;
+            btn.onclick = () => setCategoryFilter(cat);
+            container.appendChild(btn);
+        });
     }
 
     function logout() {
@@ -425,7 +688,7 @@
         
         const response = await fetch(endpoint, options);
         if(response.status === 401) {
-            logout(); // Token expired
+            logout();
             throw new Error("Unauthorized");
         }
         return response;
@@ -492,14 +755,14 @@
         const urlValue = document.getElementById('urlInput').value;
         if (!urlValue) return;
 
-        document.getElementById('loadingMsg').style.display = 'block';
+        document.getElementById('loadingContainer').style.display = 'flex';
         
         await apiFetch('/api/bookmarks', {
             method: 'POST',
             body: JSON.stringify({ url: urlValue })
         });
 
-        document.getElementById('loadingMsg').style.display = 'none';
+        document.getElementById('loadingContainer').style.display = 'none';
         document.getElementById('urlInput').value = '';
         loadBookmarks();
     }

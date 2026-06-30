@@ -39,6 +39,15 @@ const bookmarkSchema = new mongoose.Schema({
 });
 const Bookmark = mongoose.model('Bookmark', bookmarkSchema);
 
+// User schema — stores each user's custom categories
+const userSchema = new mongoose.Schema({
+  userId: { type: String, required: true, unique: true },
+  email: String,
+  name: String,
+  categories: { type: [String], default: [] },
+});
+const User = mongoose.model('User', userSchema);
+
 // --- AUTHENTICATION ROUTES ---
 
 // 1. Verify Google Login Token & Return our own JWT
@@ -85,6 +94,27 @@ app.get('/api/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'success', message: 'The Bookmark API is alive!' });
 });
 
+// --- CATEGORY ROUTES ---
+
+// Get the logged-in user's categories
+app.get('/api/categories', requireAuth, async (req: any, res: express.Response) => {
+  const user = await User.findOne({ userId: req.userId });
+  res.json({ categories: user?.categories || [] });
+});
+
+// Save/update the logged-in user's categories
+app.post('/api/categories', requireAuth, async (req: any, res: express.Response) => {
+  const { categories } = req.body;
+  await User.findOneAndUpdate(
+    { userId: req.userId },
+    { userId: req.userId, categories },
+    { upsert: true, new: true }
+  );
+  res.json({ message: 'Categories saved!', categories });
+});
+
+// --- BOOKMARK ROUTES ---
+
 app.get('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
   // Fetch ONLY bookmarks belonging to this user!
   const bookmarks = await Bookmark.find({ userId: req.userId });
@@ -111,28 +141,45 @@ app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) 
   // Step 1: Get the webpage text
   let bodyText = req.body.pageText || ''; // If the Chrome Extension sent the text, use it instantly!
 
+  // Step 1a: For YouTube URLs, grab the title reliably via oEmbed (free, no API key)
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (ytMatch) {
+    try {
+      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+      if (oembedRes.ok) {
+        const oembedData = await oembedRes.json() as any;
+        newBookmark.title = oembedData.title || newBookmark.title;
+      }
+    } catch (e) { /* oEmbed failed, no big deal */ }
+  }
+
   if (!bodyText) {
-    // If it came from the web UI (no pageText provided), use a lightweight API to scrape it
+    // Single fast scrape — no retries, no delays
     try {
       const response = await fetch('https://r.jina.ai/' + url);
       bodyText = await response.text();
-      bodyText = bodyText.substring(0, 3000); // Keep it short for the AI
+      bodyText = bodyText.substring(0, 3000);
     } catch (error) {
       console.log("Could not scrape the website:", url);
     }
   }
 
-  // Step 2: Ask Groq AI to categorize and summarize
+  // Step 2: Get the user's custom categories for the AI prompt
+  const user = await User.findOne({ userId: req.userId });
+  const userCategories = user?.categories?.length ? user.categories : ['General'];
+
+  // Step 3: Ask Groq AI to categorize and summarize
   try {
     // Even if scraping failed, the AI can still guess from the URL!
     const contentForAI = bodyText.length > 50
         ? `URL: ${url}\nWebpage content: ${bodyText}`
         : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
 
+    const categoryList = JSON.stringify(userCategories);
     const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
 
 The JSON must have exactly three keys:
-- "category": one of ["DSA", "Jobs", "Reading", "General"]
+- "category": one of ${categoryList}
 - "summary": a single sentence (max 20 words) summarizing the page
 - "title": a clean, short title for this page (max 8 words)
 
