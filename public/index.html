@@ -301,24 +301,44 @@
             margin-bottom: 20px; 
             gap: 15px; 
         }
-        
-        #loadingContainer span {
-            color: var(--accent); 
-            font-weight: 600; 
-            letter-spacing: 1px;
+        /* PROGRESS RING LOADER */
+        .progress-ring-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
         }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 126, 179, 0.2);
+        .progress-ring {
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            border-top-color: var(--accent);
-            animation: spin 1s linear infinite;
+            background: conic-gradient(var(--accent) 0%, rgba(255, 126, 179, 0.15) 0%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            position: relative;
+            transition: background 0.3s ease;
         }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .progress-ring::before {
+            content: "";
+            position: absolute;
+            width: 58px;
+            height: 58px;
+            background-color: var(--bg-card); /* Inner circle to make it a ring */
+            border-radius: 50%;
+        }
+        .progress-ring span {
+            position: relative;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        .progress-text {
+            color: var(--accent);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         /* ONBOARDING SCREEN */
@@ -488,7 +508,12 @@
             <button id="saveBtn" class="primary-btn" onclick="saveBookmark()" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Save Link</button>
         </div>
 
-
+        <div id="progressRingContainer" class="progress-ring-container">
+            <div id="progressRing" class="progress-ring">
+                <span id="progressPercent">0%</span>
+            </div>
+            <span class="progress-text">✨ AI is analyzing the page...</span>
+        </div>
 
         <input type="text" id="searchInput" placeholder="🔍 Search by title, url, or summary..." onkeyup="applyFilters()" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;" aria-label="Search bookmarks">
         
@@ -695,7 +720,9 @@
     async function loadBookmarks() {
         try {
             const response = await apiFetch('/api/bookmarks');
-            allBookmarks = await response.json();
+            const data = await response.json();
+            // Sort to show the most recent bookmark at the top (descending id)
+            allBookmarks = data.sort((a, b) => b.id - a.id);
             applyFilters();
         } catch(e) { console.log(e); }
     }
@@ -753,20 +780,43 @@
         if (!urlValue) return;
 
         const btn = document.getElementById('saveBtn');
-        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; border-color: rgba(255,255,255,0.3); border-top-color: white;"></div> Analyzing...';
         btn.disabled = true;
         btn.style.opacity = '0.7';
+        
+        const ringContainer = document.getElementById('progressRingContainer');
+        const ring = document.getElementById('progressRing');
+        const percentText = document.getElementById('progressPercent');
+        
+        // Reset and show ring
+        ringContainer.style.display = 'flex';
+        ring.style.background = `conic-gradient(var(--accent) 0%, rgba(255, 126, 179, 0.15) 0%)`;
+        percentText.innerText = '0%';
+        
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.floor(Math.random() * 15) + 5; // jump by 5-20%
+            if (progress > 95) progress = 95;
+            ring.style.background = `conic-gradient(var(--accent) ${progress}%, rgba(255, 126, 179, 0.15) ${progress}%)`;
+            percentText.innerText = progress + '%';
+        }, 600);
         
         await apiFetch('/api/bookmarks', {
             method: 'POST',
             body: JSON.stringify({ url: urlValue })
         });
 
-        btn.innerHTML = 'Save Link';
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        document.getElementById('urlInput').value = '';
-        loadBookmarks();
+        // Complete animation
+        clearInterval(interval);
+        ring.style.background = `conic-gradient(var(--accent) 100%, rgba(255, 126, 179, 0.15) 100%)`;
+        percentText.innerText = '100%';
+        
+        setTimeout(() => {
+            ringContainer.style.display = 'none';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            document.getElementById('urlInput').value = '';
+            loadBookmarks();
+        }, 600);
     }
 
     async function editBookmark(id, currentTitle) {
