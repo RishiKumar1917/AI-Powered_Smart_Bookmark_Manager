@@ -15,9 +15,18 @@
         input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
         button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         button:hover { background-color: #0056b3; }
+        .tag { display: inline-block; background: #eee; padding: 3px 8px; border-radius: 12px; font-size: 12px; margin-bottom: 5px; color: #555; }
 
         .bookmark-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .bookmark-card a { text-decoration: none; color: #007bff; font-weight: bold; }
+        .ai-summary { font-style: italic; color: #888; font-size: 13px; margin-top: 5px; }
+        #loadingMsg { text-align: center; color: #888; font-style: italic; display: none; }
+        
+        /* Filter & Search Styles */
+        .filters { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .filter-btn { padding: 6px 12px; border: 1px solid #ccc; border-radius: 20px; background: white; cursor: pointer; white-space: nowrap; }
+        .filter-btn.active { background: #333; color: white; border-color: #333; }
+        .search-bar { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -30,28 +39,88 @@
         <button onclick="saveBookmark()">Save</button>
     </div>
 
+    <p id="loadingMsg">🤖 AI is analyzing the page... please wait...</p>
+
+    <!-- NEW: Search and Filters -->
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search bookmarks by title, url, or summary..." onkeyup="applyFilters()">
+    <div class="filters" id="categoryFilters">
+        <button class="filter-btn active" onclick="setCategoryFilter('All')">All</button>
+        <button class="filter-btn" onclick="setCategoryFilter('DSA')">DSA</button>
+        <button class="filter-btn" onclick="setCategoryFilter('Jobs')">Jobs</button>
+        <button class="filter-btn" onclick="setCategoryFilter('Reading')">Reading</button>
+        <button class="filter-btn" onclick="setCategoryFilter('General')">General</button>
+    </div>
+
     <div id="bookmarksList">
         <!-- Bookmarks will be injected here by JavaScript -->
     </div>
 </div>
 
 <script>
+    let allBookmarks = [];
+    let currentFilter = 'All';
+
     async function loadBookmarks() {
         const response = await fetch('http://localhost:3000/api/bookmarks');
-        const bookmarks = await response.json();
+        allBookmarks = await response.json();
+        applyFilters();
+    }
 
+    function setCategoryFilter(category) {
+        currentFilter = category;
+        
+        // Update active class on buttons
+        const btns = document.querySelectorAll('.filter-btn');
+        btns.forEach(btn => {
+            if (btn.innerText === category) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+        
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        const filtered = allBookmarks.filter(bm => {
+            // Check Category Filter
+            const matchesCategory = currentFilter === 'All' || bm.category === currentFilter;
+            
+            // Check Search Term
+            const searchString = `${bm.title} ${bm.url} ${bm.summary}`.toLowerCase();
+            const matchesSearch = searchString.includes(searchTerm);
+            
+            return matchesCategory && matchesSearch;
+        });
+
+        renderBookmarks(filtered);
+    }
+
+    function renderBookmarks(bookmarks) {
         const listDiv = document.getElementById('bookmarksList');
         listDiv.innerHTML = '';
+        
+        if (bookmarks.length === 0) {
+            listDiv.innerHTML = '<p style="text-align:center; color:#888;">No bookmarks found.</p>';
+            return;
+        }
 
         bookmarks.forEach(bm => {
-            // Added a Delete button passing the bookmark's ID
             listDiv.innerHTML += `
                 <div class="bookmark-card" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
+                        <span class="tag">${bm.category || 'General'}</span><br>
                         <a href="${bm.url}" target="_blank">${bm.title}</a>
                         <p style="margin: 5px 0 0; font-size: 12px; color: #666;">${bm.url}</p>
+                        <p class="ai-summary">🤖 ${bm.summary || 'No summary available.'}</p>
                     </div>
-                    <button style="background: #dc3545; padding: 5px 10px;" onclick="deleteBookmark('${bm.id}')">🗑️</button>
+                    <div>
+                        <button style="background: #ffc107; color: black; padding: 5px 10px; margin-right: 5px;" onclick="editBookmark('${bm.id}', '${bm.title}')">✏️</button>
+                        <button style="background: #dc3545; padding: 5px 10px;" onclick="deleteBookmark('${bm.id}')">🗑️</button>
+                    </div>
                 </div>
             `;
         });
@@ -59,7 +128,11 @@
 
     async function saveBookmark() {
         const urlValue = document.getElementById('urlInput').value;
+        
         if (!urlValue) return;
+
+        // Show loading message (AI takes a few seconds)
+        document.getElementById('loadingMsg').style.display = 'block';
 
         await fetch('http://localhost:3000/api/bookmarks', {
             method: 'POST',
@@ -67,8 +140,25 @@
             body: JSON.stringify({ url: urlValue })
         });
 
+        // Hide loading message
+        document.getElementById('loadingMsg').style.display = 'none';
+
         document.getElementById('urlInput').value = '';
         loadBookmarks();
+    }
+
+    // NEW FUNCTION: Edit Bookmark Title
+    async function editBookmark(id, currentTitle) {
+        const newTitle = prompt("Enter new title:", currentTitle);
+        
+        if (newTitle && newTitle !== currentTitle) {
+            await fetch(`http://localhost:3000/api/bookmarks/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle })
+            });
+            loadBookmarks(); // Reload list to show new title
+        }
     }
 
     // NEW FUNCTION: Send a DELETE request
