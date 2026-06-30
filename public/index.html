@@ -275,13 +275,7 @@
             border-color: rgba(239, 68, 68, 0.3);
         }
 
-        #loadingContainer { 
-            display: none; 
-            align-items: center; 
-            justify-content: center; 
-            margin-bottom: 20px; 
-            gap: 15px; 
-        }
+
         /* PROGRESS RING LOADER */
         .progress-ring-container {
             display: none;
@@ -962,8 +956,8 @@
         const rightDiv = document.getElementById('illustrationRight');
         if (!leftDiv || !rightDiv) return;
 
-        let leftTheme = 'tech';
-        let rightTheme = 'reading';
+        let leftTheme;
+        let rightTheme;
 
         const normalized = filter.toLowerCase();
 
@@ -1372,11 +1366,10 @@
             }
 
             try {
-                const res = await apiFetch('/api/bookmarks/import', {
+                await apiFetch('/api/bookmarks/import', {
                     method: 'POST',
                     body: JSON.stringify({ bookmarks })
                 });
-                const data = await res.json();
                 alert(`Successfully imported ${bookmarks.length} bookmarks. AI is now organizing them in the background!`);
                 
                 // Clear input
