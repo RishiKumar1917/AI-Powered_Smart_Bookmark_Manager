@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Bookmarks</title>
+  <style>
+    body { width: 300px; font-family: 'Segoe UI', sans-serif; padding: 15px; margin: 0; background: #f9f9f9; }
+    h3 { margin-top: 0; color: #333; text-align: center; }
+    button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-top: 10px; }
+    button:hover { background: #0056b3; }
+    #status { margin-top: 10px; font-size: 13px; text-align: center; color: #555; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h3>🔖 Smart Bookmark</h3>
+  <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Current URL:</div>
+  <input type="text" id="urlDisplay" readonly />
+  <button id="saveBtn">Save to AI Manager</button>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Smart Bookmarks",
+  "version": "1.0",
+  "description": "Save current tab to your local Smart Bookmark API",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*"
+  ]
+}
