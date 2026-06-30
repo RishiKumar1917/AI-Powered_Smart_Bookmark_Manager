@@ -3,56 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Bookmark Manager</title>
+    <title>Smart Bookmarks HQ</title>
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        /* VANILLA CSS & FLEXBOX */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        h1 { text-align: center; color: #333; }
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: rgba(30, 41, 59, 0.7);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
 
-        /* Flexbox in action for the input bar! */
-        .input-group { display: flex; gap: 10px; margin-bottom: 30px; }
-        input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .tag { display: inline-block; background: #eee; padding: 3px 8px; border-radius: 12px; font-size: 12px; margin-bottom: 5px; color: #555; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
+        }
 
-        .bookmark-card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .bookmark-card a { text-decoration: none; color: #007bff; font-weight: bold; }
-        .ai-summary { font-style: italic; color: #888; font-size: 13px; margin-top: 5px; }
-        #loadingMsg { text-align: center; color: #888; font-style: italic; display: none; }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+
+        /* LOGIN SCREEN */
+        #loginScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 60vh;
+            background: var(--surface-color);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            text-align: center;
+        }
+
+        #loginScreen p { color: var(--text-secondary); margin-bottom: 30px; }
+
+        /* DASHBOARD */
+        #dashboard { display: none; }
         
-        /* Filter & Search Styles */
-        .filters { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .filter-btn { padding: 6px 12px; border: 1px solid #ccc; border-radius: 20px; background: white; color: #333; cursor: pointer; white-space: nowrap; }
-        .filter-btn.active { background: #333; color: white; border-color: #333; }
-        .search-bar { width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .user-greeting { color: var(--text-secondary); }
+        
+        .logout-btn {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+        /* INPUT AREA */
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 14px 20px;
+            font-size: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: var(--accent); }
+
+        button {
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        button:hover { background-color: var(--accent-hover); }
+        button:active { transform: scale(0.98); }
+
+        /* SEARCH & FILTERS */
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+        .filters::-webkit-scrollbar { height: 6px; }
+        .filters::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: rgba(255,255,255,0.1); }
+        .filter-btn.active {
+            background: var(--text-primary);
+            color: var(--bg-color);
+            border-color: var(--text-primary);
+        }
+
+        /* BOOKMARK CARDS */
+        .bookmark-card {
+            background: var(--surface-color);
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bookmark-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        .bookmark-content { flex: 1; min-width: 0; padding-right: 15px; }
+        
+        .tag {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.2);
+            color: #93c5fd;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bookmark-title {
+            display: block;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bookmark-title:hover { color: var(--accent); }
+
+        .bookmark-url {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin: 0 0 10px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ai-summary {
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .card-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            background: rgba(255,255,255,0.05);
+            border: none;
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        .icon-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .icon-btn.delete:hover { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+
+        #loadingMsg { text-align: center; color: var(--text-secondary); margin-bottom: 20px; display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🔖 Smart Bookmarks</h1>
+    <h1>Smart Bookmarks</h1>
 
-    <div class="input-group">
-        <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)">
-        <button onclick="saveBookmark()">Save</button>
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen">
+        <h2>Welcome Back</h2>
+        <p>Sign in to access your private AI-analyzed bookmarks.</p>
+        <!-- Google Sign-In Button Container -->
+        <div id="g_id_onload"
+             data-client_id="65113458544-2j2i8gufqvcpkvitbsfae0aqr6142n7h.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="pill"
+             data-theme="filled_black"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
     </div>
 
-    <p id="loadingMsg">🤖 AI is analyzing the page... please wait...</p>
+    <!-- MAIN DASHBOARD -->
+    <div id="dashboard">
+        <div class="header-actions">
+            <span class="user-greeting" id="userGreeting">Hello, User</span>
+            <button class="logout-btn" onclick="logout()">Sign Out</button>
+        </div>
 
-    <!-- NEW: Search and Filters -->
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search bookmarks by title, url, or summary..." onkeyup="applyFilters()">
-    <div class="filters" id="categoryFilters">
-        <button class="filter-btn active" onclick="setCategoryFilter('All')">All</button>
-        <button class="filter-btn" onclick="setCategoryFilter('DSA')">DSA</button>
-        <button class="filter-btn" onclick="setCategoryFilter('Jobs')">Jobs</button>
-        <button class="filter-btn" onclick="setCategoryFilter('Reading')">Reading</button>
-        <button class="filter-btn" onclick="setCategoryFilter('General')">General</button>
-    </div>
+        <div class="input-group">
+            <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)">
+            <button onclick="saveBookmark()">Save Link</button>
+        </div>
 
-    <div id="bookmarksList">
-        <!-- Bookmarks will be injected here by JavaScript -->
+        <p id="loadingMsg">✨ AI is analyzing the page...</p>
+
+        <input type="text" id="searchInput" placeholder="🔍 Search by title, url, or summary..." onkeyup="applyFilters()">
+        
+        <div class="filters" id="categoryFilters">
+            <button class="filter-btn active" onclick="setCategoryFilter('All')">All</button>
+            <button class="filter-btn" onclick="setCategoryFilter('DSA')">DSA</button>
+            <button class="filter-btn" onclick="setCategoryFilter('Jobs')">Jobs</button>
+            <button class="filter-btn" onclick="setCategoryFilter('Reading')">Reading</button>
+            <button class="filter-btn" onclick="setCategoryFilter('General')">General</button>
+        </div>
+
+        <div id="bookmarksList">
+            <!-- Bookmarks injected here -->
+        </div>
     </div>
 </div>
 
@@ -60,25 +296,94 @@
     let allBookmarks = [];
     let currentFilter = 'All';
 
+    // --- AUTHENTICATION LOGIC ---
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (token) {
+        showDashboard();
+    }
+
+    async function handleCredentialResponse(response) {
+        // Send Google token to our backend to verify and get a JWT
+        try {
+            const res = await fetch('/api/auth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ credential: response.credential })
+            });
+            const data = await res.json();
+            
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // ALSO save to cookie so the Chrome Extension can read it!
+                // We use SameSite=None and Secure so the extension can read it cross-site
+                document.cookie = `token=${data.token}; path=/; max-age=604800; Secure; SameSite=None`;
+                
+                showDashboard();
+            } else {
+                alert("Login failed!");
+            }
+        } catch(err) {
+            console.error("Auth error", err);
+        }
+    }
+
+    function showDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if(storedUser) {
+            document.getElementById('userGreeting').innerText = \`Welcome, \${storedUser.name}\`;
+        }
+        
+        loadBookmarks();
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        document.cookie = "token=; path=/; max-age=0; Secure; SameSite=None";
+        window.location.reload();
+    }
+
+    // --- API HELPER WITH AUTH ---
+    async function apiFetch(endpoint, options = {}) {
+        const token = localStorage.getItem('token');
+        if(!token) { logout(); return; }
+
+        const headers = { 
+            'Content-Type': 'application/json',
+            'Authorization': \`Bearer \${token}\` 
+        };
+        options.headers = { ...headers, ...options.headers };
+        
+        const response = await fetch(endpoint, options);
+        if(response.status === 401) {
+            logout(); // Token expired
+            throw new Error("Unauthorized");
+        }
+        return response;
+    }
+
+    // --- BOOKMARK LOGIC ---
     async function loadBookmarks() {
-        const response = await fetch('/api/bookmarks');
-        allBookmarks = await response.json();
-        applyFilters();
+        try {
+            const response = await apiFetch('/api/bookmarks');
+            allBookmarks = await response.json();
+            applyFilters();
+        } catch(e) { console.log(e); }
     }
 
     function setCategoryFilter(category) {
         currentFilter = category;
-        
-        // Update active class on buttons
         const btns = document.querySelectorAll('.filter-btn');
         btns.forEach(btn => {
-            if (btn.innerText === category) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            btn.classList.toggle('active', btn.innerText === category);
         });
-        
         applyFilters();
     }
 
@@ -86,16 +391,11 @@
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         
         const filtered = allBookmarks.filter(bm => {
-            // Check Category Filter
             const matchesCategory = currentFilter === 'All' || bm.category === currentFilter;
-            
-            // Check Search Term
-            const searchString = `${bm.title} ${bm.url} ${bm.summary}`.toLowerCase();
+            const searchString = \`\${bm.title} \${bm.url} \${bm.summary}\`.toLowerCase();
             const matchesSearch = searchString.includes(searchTerm);
-            
             return matchesCategory && matchesSearch;
         });
-
         renderBookmarks(filtered);
     }
 
@@ -104,72 +404,61 @@
         listDiv.innerHTML = '';
         
         if (bookmarks.length === 0) {
-            listDiv.innerHTML = '<p style="text-align:center; color:#888;">No bookmarks found.</p>';
+            listDiv.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top: 40px;">No bookmarks yet. Save one above!</p>';
             return;
         }
 
         bookmarks.forEach(bm => {
-            listDiv.innerHTML += `
-                <div class="bookmark-card" style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span class="tag">${bm.category || 'General'}</span><br>
-                        <a href="${bm.url}" target="_blank">${bm.title}</a>
-                        <p style="margin: 5px 0 0; font-size: 12px; color: #666;">${bm.url}</p>
-                        <p class="ai-summary">🤖 ${bm.summary || 'No summary available.'}</p>
+            listDiv.innerHTML += \`
+                <div class="bookmark-card">
+                    <div class="bookmark-content">
+                        <span class="tag">\${bm.category || 'General'}</span>
+                        <a href="\${bm.url}" target="_blank" class="bookmark-title">\${bm.title}</a>
+                        <p class="bookmark-url">\${bm.url}</p>
+                        <p class="ai-summary"><span>✨</span> \${bm.summary || 'No summary available.'}</p>
                     </div>
-                    <div>
-                        <button style="background: #ffc107; color: black; padding: 5px 10px; margin-right: 5px;" onclick="editBookmark('${bm.id}', '${bm.title}')">✏️</button>
-                        <button style="background: #dc3545; padding: 5px 10px;" onclick="deleteBookmark('${bm.id}')">🗑️</button>
+                    <div class="card-actions">
+                        <button class="icon-btn" onclick="editBookmark('\${bm.id}', '\${bm.title.replace(/'/g, "\\\\'")}')">✏️</button>
+                        <button class="icon-btn delete" onclick="deleteBookmark('\${bm.id}')">🗑️</button>
                     </div>
                 </div>
-            `;
+            \`;
         });
     }
 
     async function saveBookmark() {
         const urlValue = document.getElementById('urlInput').value;
-        
         if (!urlValue) return;
 
-        // Show loading message (AI takes a few seconds)
         document.getElementById('loadingMsg').style.display = 'block';
-
-        await fetch('/api/bookmarks', {
+        
+        await apiFetch('/api/bookmarks', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: urlValue })
         });
 
-        // Hide loading message
         document.getElementById('loadingMsg').style.display = 'none';
-
         document.getElementById('urlInput').value = '';
         loadBookmarks();
     }
 
-    // NEW FUNCTION: Edit Bookmark Title
     async function editBookmark(id, currentTitle) {
         const newTitle = prompt("Enter new title:", currentTitle);
-        
         if (newTitle && newTitle !== currentTitle) {
-            await fetch(`/api/bookmarks/${id}`, {
+            await apiFetch(\`/api/bookmarks/\${id}\`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: newTitle })
             });
-            loadBookmarks(); // Reload list to show new title
+            loadBookmarks();
         }
     }
 
-    // NEW FUNCTION: Send a DELETE request
     async function deleteBookmark(id) {
-        await fetch(`/api/bookmarks/${id}`, {
-            method: 'DELETE'
-        });
-        loadBookmarks(); // Reload list after deleting
+        if(confirm("Are you sure you want to delete this bookmark?")) {
+            await apiFetch(\`/api/bookmarks/\${id}\`, { method: 'DELETE' });
+            loadBookmarks();
+        }
     }
-
-    loadBookmarks();
 </script>
 
 </body>

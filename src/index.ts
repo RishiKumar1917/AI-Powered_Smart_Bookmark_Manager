@@ -3,6 +3,8 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Groq from 'groq-sdk';
+import { OAuth2Client } from 'google-auth-library';
+import jwt from 'jsonwebtoken';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -12,6 +14,10 @@ const PORT = process.env.PORT || 3000;
 
 // Initialize the Groq AI client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// Initialize Google OAuth Client
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dev_key_123';
 
 app.use(cors());
 app.use(express.json()); // CRITICAL: This allows us to read JSON data sent to us
@@ -25,6 +31,7 @@ mongoose.connect(process.env.MONGODB_URI || '')
 
 const bookmarkSchema = new mongoose.Schema({
   id: String,
+  userId: { type: String, required: true }, // Isolates bookmarks per user!
   url: String,
   title: String,
   category: String,
@@ -32,20 +39,61 @@ const bookmarkSchema = new mongoose.Schema({
 });
 const Bookmark = mongoose.model('Bookmark', bookmarkSchema);
 
+// --- AUTHENTICATION ROUTES ---
+
+// 1. Verify Google Login Token & Return our own JWT
+app.post('/api/auth/google', async (req: express.Request, res: express.Response): Promise<any> => {
+  const { credential } = req.body;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload) return res.status(400).json({ error: "Invalid token" });
+
+    // Create a JWT session token valid for 7 days
+    const token = jwt.sign(
+      { userId: payload.sub, email: payload.email, name: payload.name },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token, user: { email: payload.email, name: payload.name } });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+// Middleware to protect routes
+const requireAuth = (req: any, res: express.Response, next: express.NextFunction): any => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+};
+
 // 2. Health check endpoint (you already did this!)
 app.get('/api/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'success', message: 'The Bookmark API is alive!' });
 });
 
-app.get('/api/bookmarks', async (req: express.Request, res: express.Response) => {
-  // Fetch all bookmarks from the database!
-  const bookmarks = await Bookmark.find();
+app.get('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
+  // Fetch ONLY bookmarks belonging to this user!
+  const bookmarks = await Bookmark.find({ userId: req.userId });
   res.json(bookmarks);
 });
 
 // ... your existing code ...
 // 4. CREATE: Add a new bookmark with Auto-Scraping + AI
-app.post('/api/bookmarks', async (req: express.Request, res: express.Response) => {
+app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
   const url = req.body.url;
 
   // Generate a unique ID
@@ -53,6 +101,7 @@ app.post('/api/bookmarks', async (req: express.Request, res: express.Response) =
 
   let newBookmark: any = {
     id: uniqueId,
+    userId: req.userId, // Link bookmark to the logged-in user
     url: url,
     title: "Unknown Title",
     category: "General",
@@ -117,19 +166,20 @@ ${contentForAI}`;
 });
 
 // 5. DELETE: Remove a bookmark
-app.delete('/api/bookmarks/:id', async (req: express.Request, res: express.Response) => {
+app.delete('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Response) => {
   const idToDelete = req.params.id;
-  await Bookmark.deleteOne({ id: idToDelete });
+  // Ensure we only delete if it belongs to req.userId
+  await Bookmark.deleteOne({ id: idToDelete, userId: req.userId });
   res.json({ message: "Bookmark deleted successfully!" });
 });
 
 // 6. UPDATE: Edit an existing bookmark's title or category
-app.put('/api/bookmarks/:id', async (req: express.Request, res: express.Response) => {
+app.put('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Response): Promise<any> => {
   const idToUpdate = req.params.id;
   const { title, category } = req.body;
 
-  // Find the bookmark in the database
-  const bookmark = await Bookmark.findOne({ id: idToUpdate });
+  // Find the bookmark in the database belonging to this user
+  const bookmark = await Bookmark.findOne({ id: idToUpdate, userId: req.userId });
   
   if (!bookmark) {
     return res.status(404).json({ error: "Bookmark not found" });
