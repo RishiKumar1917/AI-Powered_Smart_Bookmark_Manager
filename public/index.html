@@ -61,7 +61,7 @@
     let currentFilter = 'All';
 
     async function loadBookmarks() {
-        const response = await fetch('http://localhost:3000/api/bookmarks');
+        const response = await fetch('/api/bookmarks');
         allBookmarks = await response.json();
         applyFilters();
     }
@@ -134,7 +134,7 @@
         // Show loading message (AI takes a few seconds)
         document.getElementById('loadingMsg').style.display = 'block';
 
-        await fetch('http://localhost:3000/api/bookmarks', {
+        await fetch('/api/bookmarks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: urlValue })
@@ -152,7 +152,7 @@
         const newTitle = prompt("Enter new title:", currentTitle);
         
         if (newTitle && newTitle !== currentTitle) {
-            await fetch(`http://localhost:3000/api/bookmarks/${id}`, {
+            await fetch(`/api/bookmarks/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title: newTitle })
@@ -163,7 +163,7 @@
 
     // NEW FUNCTION: Send a DELETE request
     async function deleteBookmark(id) {
-        await fetch(`http://localhost:3000/api/bookmarks/${id}`, {
+        await fetch(`/api/bookmarks/${id}`, {
             method: 'DELETE'
         });
         loadBookmarks(); // Reload list after deleting

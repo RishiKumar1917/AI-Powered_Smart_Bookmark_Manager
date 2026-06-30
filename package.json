@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "npx ts-node src/index.ts",
+    "build": "npm install"
   },
   "devDependencies": {
     "@types/cheerio": "^0.22.35",
