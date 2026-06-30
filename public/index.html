@@ -485,13 +485,10 @@
 
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)" aria-label="Bookmark URL">
-            <button class="primary-btn" onclick="saveBookmark()">Save Link</button>
+            <button id="saveBtn" class="primary-btn" onclick="saveBookmark()" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Save Link</button>
         </div>
 
-        <div id="loadingContainer">
-            <div class="spinner"></div>
-            <span>✨ AI is analyzing the page...</span>
-        </div>
+
 
         <input type="text" id="searchInput" placeholder="🔍 Search by title, url, or summary..." onkeyup="applyFilters()" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;" aria-label="Search bookmarks">
         
@@ -755,14 +752,19 @@
         const urlValue = document.getElementById('urlInput').value;
         if (!urlValue) return;
 
-        document.getElementById('loadingContainer').style.display = 'flex';
+        const btn = document.getElementById('saveBtn');
+        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; border-color: rgba(255,255,255,0.3); border-top-color: white;"></div> Analyzing...';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
         
         await apiFetch('/api/bookmarks', {
             method: 'POST',
             body: JSON.stringify({ url: urlValue })
         });
 
-        document.getElementById('loadingContainer').style.display = 'none';
+        btn.innerHTML = 'Save Link';
+        btn.disabled = false;
+        btn.style.opacity = '1';
         document.getElementById('urlInput').value = '';
         loadBookmarks();
     }

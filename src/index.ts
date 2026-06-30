@@ -129,6 +129,9 @@ app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) 
   // Generate a unique ID
   const uniqueId = Date.now().toString();
 
+  // Delete any existing bookmark with the same URL to prevent duplicates (replace with new analysis)
+  await Bookmark.deleteMany({ userId: req.userId, url: url });
+
   let newBookmark: any = {
     id: uniqueId,
     userId: req.userId, // Link bookmark to the logged-in user
