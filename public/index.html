@@ -504,8 +504,7 @@
         </div>
 
         <div class="input-group">
-            <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., https://github.com)" aria-label="Bookmark URL">
-            <button id="saveBtn" class="primary-btn" onclick="saveBookmark()" style="display: flex; align-items: center; justify-content: center; gap: 8px;">Save Link</button>
+            <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., github.com) - It will save automatically" aria-label="Bookmark URL" oninput="handleUrlInput(event)">
         </div>
 
         <div id="progressRingContainer" class="progress-ring-container">
@@ -775,15 +774,26 @@
         });
     }
 
-    async function saveBookmark() {
-        const urlValue = document.getElementById('urlInput').value;
+    function handleUrlInput(event) {
+        let val = event.target.value.trim();
+        if (!val) return;
+
+        // Basic check if it looks like a domain or URL
+        if (val.includes('.') && !val.includes(' ')) {
+            // Check for missing http/https using if statements as requested
+            if (!val.startsWith('http://') && !val.startsWith('https://')) {
+                val = 'https://' + val;
+            }
+            // Auto trigger save, then clear input
+            event.target.value = '';
+            saveBookmark(val);
+        }
+    }
+
+    async function saveBookmark(urlValue) {
         if (!urlValue) return;
 
-        const btn = document.getElementById('saveBtn');
-        btn.disabled = true;
-        btn.style.opacity = '0.7';
-        
-        const ringContainer = document.getElementById('progressRingContainer');
+        // Show the progress ring
         const ring = document.getElementById('progressRing');
         const percentText = document.getElementById('progressPercent');
         
@@ -812,9 +822,6 @@
         
         setTimeout(() => {
             ringContainer.style.display = 'none';
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            document.getElementById('urlInput').value = '';
             loadBookmarks();
         }, 600);
     }
