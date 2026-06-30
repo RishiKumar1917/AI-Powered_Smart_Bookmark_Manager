@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
           // 2. Send both the URL AND the text to our backend
-          const response = await fetch('http://localhost:3000/api/bookmarks', {
+          const response = await fetch('https://ai-poweredsmartbookmarkmanager-production.up.railway.app/api/bookmarks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ url: url, pageText: pageText })
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('Server returned an error');
           }
         } catch (error) {
-          status.textContent = '❌ Failed to save. Is your localhost:3000 server running?';
+          status.textContent = '❌ Failed to save. Is your cloud server running?';
           status.style.color = 'red';
           saveBtn.disabled = false;
           saveBtn.textContent = 'Try Again';
