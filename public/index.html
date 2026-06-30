@@ -587,10 +587,55 @@
             color: white;
             transform: rotate(45deg);
         }
-        .header-right {
+        .sync-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s;
+        }
+        .sync-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: var(--accent);
+        }
+        .import-status-banner {
+            background: rgba(255, 126, 179, 0.08);
+            border: 1px solid rgba(255, 126, 179, 0.2);
+            border-radius: 14px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            color: var(--accent);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: pulseBanner 1.5s infinite ease-in-out;
+        }
+        @keyframes pulseBanner {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+        .pending-card {
+            border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+            background: rgba(255, 255, 255, 0.01) !important;
+            opacity: 0.7;
         }
     </style>
 </head>
@@ -641,6 +686,8 @@
         <div class="header-actions">
             <span id="userGreeting">Hello, User</span>
             <div class="header-right">
+                <button class="sync-btn" onclick="triggerImport()" title="Sync Chrome Bookmarks">🔄 Sync</button>
+                <input type="file" id="bookmarksFileInput" accept=".html" style="display:none" onchange="handleImportFile(event)">
                 <button class="settings-btn" onclick="openSettings()" title="Edit Interests">⚙️</button>
                 <button class="logout-btn" onclick="logout()">Sign Out</button>
             </div>
@@ -648,6 +695,11 @@
 
         <div class="input-group">
             <input type="text" id="urlInput" placeholder="Paste a URL here (e.g., github.com) - It will save automatically" aria-label="Bookmark URL" oninput="handleUrlInput(event)">
+        </div>
+
+        <div id="importStatusBanner" class="import-status-banner" style="display: none;">
+            <div class="pulse-dot"></div>
+            <span>AI is organizing your imported bookmarks (<span id="importPendingCount">0</span> remaining)...</span>
         </div>
 
         <div id="progressRingContainer" class="progress-ring-container">
@@ -1102,6 +1154,7 @@
         renderFilterButtons();
         loadBookmarks();
         updateIllustrations(currentFilter);
+        startPollingStatus();
     }
 
     function renderFilterButtons() {
@@ -1192,16 +1245,22 @@
         }
 
         bookmarks.forEach(bm => {
+            const isPending = bm.status === 'pending' || bm.status === 'processing';
+            const cardClass = isPending ? 'bookmark-card pending-card' : 'bookmark-card';
+            
             listDiv.innerHTML += `
-                <div class="bookmark-card">
+                <div class="${cardClass}">
                     <div class="bookmark-content">
                         <span class="tag">${bm.category || 'General'}</span>
                         <a href="${bm.url}" target="_blank" class="bookmark-title">${bm.title}</a>
                         <p class="bookmark-url">${bm.url}</p>
-                        <p class="ai-summary"><span>✨</span> ${bm.summary || 'No summary available.'}</p>
+                        <p class="ai-summary">
+                            <span>${isPending ? '⏳' : '✨'}</span> 
+                            ${isPending ? 'AI is scraping and organizing...' : (bm.summary || 'No summary available.')}
+                        </p>
                     </div>
                     <div class="card-actions">
-                        <button class="icon-btn" onclick="editBookmark('${bm.id}', '${bm.title.replace(/'/g, "\\'")}')">✏️</button>
+                        <button class="icon-btn" onclick="editBookmark('${bm.id}', '${bm.title.replace(/'/g, "\\'")}')" ${isPending ? 'disabled' : ''}>✏️</button>
                         <button class="icon-btn delete" onclick="deleteBookmark('${bm.id}')">🗑️</button>
                     </div>
                 </div>
@@ -1278,6 +1337,101 @@
             await apiFetch(`/api/bookmarks/${id}`, { method: 'DELETE' });
             loadBookmarks();
         }
+    }
+
+    // --- CHROME BOOKMARK IMPORT LOGIC ---
+    let pollingInterval = null;
+
+    function triggerImport() {
+        document.getElementById('bookmarksFileInput').click();
+    }
+
+    async function handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const htmlContent = e.target.result;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+            const links = doc.querySelectorAll('a');
+            const bookmarks = [];
+
+            links.forEach(a => {
+                const url = a.getAttribute('href');
+                const title = a.textContent.trim();
+                if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+                    bookmarks.push({ url, title });
+                }
+            });
+
+            if (bookmarks.length === 0) {
+                alert("No valid bookmarks found in the uploaded HTML file.");
+                return;
+            }
+
+            try {
+                const res = await apiFetch('/api/bookmarks/import', {
+                    method: 'POST',
+                    body: JSON.stringify({ bookmarks })
+                });
+                const data = await res.json();
+                alert(`Successfully imported ${bookmarks.length} bookmarks. AI is now organizing them in the background!`);
+                
+                // Clear input
+                event.target.value = '';
+                
+                // Reload and start polling
+                loadBookmarks();
+                startPollingStatus();
+            } catch (err) {
+                console.error("Failed to import bookmarks", err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function startPollingStatus() {
+        if (pollingInterval) clearInterval(pollingInterval);
+        
+        checkImportStatus(); // initial check
+        pollingInterval = setInterval(checkImportStatus, 3000);
+    }
+
+    async function checkImportStatus() {
+        try {
+            const res = await apiFetch('/api/bookmarks/import-status');
+            const data = await res.json();
+            const pendingCount = data.pendingCount || 0;
+
+            const banner = document.getElementById('importStatusBanner');
+            const countText = document.getElementById('importPendingCount');
+
+            if (pendingCount > 0) {
+                banner.style.display = 'flex';
+                countText.innerText = pendingCount;
+                loadBookmarksQuietly();
+            } else {
+                banner.style.display = 'none';
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                    loadBookmarks();
+                }
+            }
+        } catch(e) {
+            console.error("Failed to fetch import status", e);
+        }
+    }
+
+    async function loadBookmarksQuietly() {
+        try {
+            const response = await apiFetch('/api/bookmarks');
+            const data = await response.json();
+            allBookmarks = data.sort((a, b) => b.id - a.id);
+            applyFilters();
+        } catch(e) { console.log(e); }
     }
 </script>
 

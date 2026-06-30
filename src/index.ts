@@ -36,6 +36,7 @@ const bookmarkSchema = new mongoose.Schema({
   title: String,
   category: String,
   summary: String,
+  status: { type: String, default: 'completed', enum: ['pending', 'processing', 'completed'] }
 });
 const Bookmark = mongoose.model('Bookmark', bookmarkSchema);
 
@@ -241,6 +242,133 @@ app.put('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Respons
 
   await bookmark.save();
   res.json({ message: "Bookmark updated successfully!", bookmark });
+});
+
+// 7. GET IMPORT STATUS: Count remaining pending/processing bookmarks
+app.get('/api/bookmarks/import-status', requireAuth, async (req: any, res: express.Response) => {
+  const count = await Bookmark.countDocuments({
+    userId: req.userId,
+    status: { $in: ['pending', 'processing'] }
+  });
+  res.json({ pendingCount: count });
+});
+
+// 8. IMPORT: Add multiple bookmarks in 'pending' state and process in the background
+app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Response): Promise<any> => {
+  const { bookmarks } = req.body;
+  if (!Array.isArray(bookmarks)) {
+    return res.status(400).json({ error: "Invalid bookmarks array format" });
+  }
+
+  const userId = req.userId;
+  const insertedBookmarks: any[] = [];
+
+  for (const item of bookmarks) {
+    const uniqueId = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+    
+    // Delete any existing bookmark with the same URL to prevent duplicates (replace with new analysis)
+    await Bookmark.deleteMany({ userId, url: item.url });
+
+    const newBm = new Bookmark({
+      id: uniqueId,
+      userId,
+      url: item.url,
+      title: item.title || "Untitled Link",
+      category: "General",
+      summary: "Queueing for AI analysis...",
+      status: "pending"
+    });
+    
+    await newBm.save();
+    insertedBookmarks.push(newBm);
+  }
+
+  // Immediately respond to the user so they are not blocked
+  res.json({ message: "Import started", count: insertedBookmarks.length });
+
+  // Spawn background worker loop to scrape & analyze asynchronously
+  (async () => {
+    // Fetch categories for classification
+    const user = await User.findOne({ userId });
+    const userCategories = user?.categories?.length ? user.categories : ['General'];
+    const categoryList = JSON.stringify(userCategories);
+
+    for (const bm of insertedBookmarks) {
+      try {
+        // Set to processing
+        await Bookmark.updateOne({ id: bm.id }, { status: 'processing' });
+
+        let bodyText = "";
+        let finalTitle = bm.title || "Untitled Link";
+
+        // Check for YouTube oEmbed
+        const ytMatch = bm.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+        let ytTitle = "";
+        if (ytMatch) {
+          try {
+            const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(bm.url)}&format=json`);
+            if (oembedRes.ok) {
+              const oembedData = await oembedRes.json() as any;
+              ytTitle = oembedData.title || "";
+              finalTitle = ytTitle;
+            }
+          } catch (e) {}
+        }
+
+        // Fast Jina Scrape if not Youtube or Youtube oEmbed failed
+        if (!ytTitle) {
+          try {
+            const response = await fetch('https://r.jina.ai/' + bm.url);
+            bodyText = await response.text();
+            bodyText = bodyText.substring(0, 3000);
+          } catch (error) {
+            console.log("Could not background scrape:", bm.url);
+          }
+        }
+
+        // Analyze with Groq Llama-3.3-70b-versatile
+        const contentForAI = bodyText.length > 50
+          ? `URL: ${bm.url}\nWebpage content: ${bodyText}`
+          : `URL: ${bm.url} (Note: Could not scrape page content, please analyze based on URL only)`;
+
+        const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
+
+The JSON must have exactly three keys:
+- "category": one of ${categoryList}
+- "summary": a single sentence (max 20 words) summarizing the page
+- "title": a clean, short title for this page (max 8 words)
+
+${contentForAI}`;
+
+        const completion = await groq.chat.completions.create({
+          messages: [{ role: "user", content: prompt }],
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.1,
+        });
+
+        const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
+        const parsed = JSON.parse(aiText);
+
+        await Bookmark.updateOne({ id: bm.id }, {
+          title: parsed.title || finalTitle,
+          category: parsed.category || "General",
+          summary: parsed.summary || "No summary available.",
+          status: "completed"
+        });
+
+      } catch (err) {
+        console.error("Background AI analysis error:", err);
+        // Fallback to complete state on failure so it doesn't get stuck in queue
+        await Bookmark.updateOne({ id: bm.id }, {
+          status: 'completed',
+          summary: "Failed to fetch details. Click Edit to customize."
+        });
+      }
+
+      // Small rate-limit delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  })();
 });
 
 
