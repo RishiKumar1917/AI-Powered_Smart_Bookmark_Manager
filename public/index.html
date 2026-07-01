@@ -789,6 +789,7 @@
         <div class="settings-tabs">
             <button id="tabBtnInterests" class="settings-tab-btn active" onclick="switchSettingsTab('interests')">Interests</button>
             <button id="tabBtnSecurity" class="settings-tab-btn" onclick="switchSettingsTab('security')">🔒 Security</button>
+            <button id="tabBtnSync" class="settings-tab-btn" onclick="switchSettingsTab('sync')">🔄 Sync</button>
         </div>
         
         <!-- Interests Tab Content -->
@@ -826,6 +827,17 @@
                     <input type="password" id="pinInput" placeholder="Enter a 4-digit PIN or passphrase" aria-label="Enter a PIN or passphrase" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
                     <button class="get-started-btn" onclick="setupE2E()" style="padding: 10px; font-size: 14px; border-radius: 10px; margin-top: 5px; box-shadow: none;">Enable E2E</button>
                 </div>
+            </div>
+        </div>
+        
+        <!-- Sync Tab Content -->
+        <div id="settingsTabSync" class="settings-tab-content" style="display: none;">
+            <div class="settings-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">Import Chrome Bookmarks</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem; line-height: 1.5;">
+                    Upload your Chrome bookmarks HTML file to sync your existing bookmarks with the AI-Powered Manager. The AI will automatically analyze, summarize, and categorize them for you.
+                </p>
+                <button class="sync-btn" onclick="triggerImport()" style="padding: 12px 24px; font-size: 15px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">📂 Upload Bookmarks File</button>
             </div>
         </div>
         
@@ -1554,21 +1566,23 @@
     }
 
     function switchSettingsTab(tabName) {
-        // Hide all tab contents
         document.getElementById('settingsTabInterests').style.display = 'none';
         document.getElementById('settingsTabSecurity').style.display = 'none';
+        document.getElementById('settingsTabSync').style.display = 'none';
         
-        // Remove active class from all tab buttons
         document.getElementById('tabBtnInterests').classList.remove('active');
         document.getElementById('tabBtnSecurity').classList.remove('active');
+        document.getElementById('tabBtnSync').classList.remove('active');
         
-        // Show selected tab content and activate button
         if (tabName === 'interests') {
             document.getElementById('settingsTabInterests').style.display = 'block';
             document.getElementById('tabBtnInterests').classList.add('active');
         } else if (tabName === 'security') {
             document.getElementById('settingsTabSecurity').style.display = 'block';
             document.getElementById('tabBtnSecurity').classList.add('active');
+        } else if (tabName === 'sync') {
+            document.getElementById('settingsTabSync').style.display = 'block';
+            document.getElementById('tabBtnSync').classList.add('active');
         }
     }
 
