@@ -23,8 +23,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dev_key_123';
 // Server-side encryption key derived from JWT_SECRET (Option A)
 const ENCRYPTION_KEY = crypto.createHash('sha256').update(JWT_SECRET).digest();
 
-function encryptServer(text: string): string {
-  if (!text) return text;
+function encryptServer(text: string | null | undefined): string {
+  if (!text) return '';
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -32,8 +32,8 @@ function encryptServer(text: string): string {
   return iv.toString('hex') + ':' + encrypted;
 }
 
-function decryptServer(encryptedText: string): string {
-  if (!encryptedText) return encryptedText;
+function decryptServer(encryptedText: string | null | undefined): string {
+  if (!encryptedText) return '';
   try {
     const parts = encryptedText.split(':');
     if (parts.length < 2) return encryptedText; // Probably old unencrypted bookmark
@@ -44,7 +44,7 @@ function decryptServer(encryptedText: string): string {
     decrypted += decipher.final('utf8');
     return decrypted;
   } catch (e) {
-    return encryptedText;
+    return encryptedText || '';
   }
 }
 
@@ -121,7 +121,7 @@ const requireAuth = (req: any, res: express.Response, next: express.NextFunction
 };
 
 // 2. Health check endpoint (you already did this!)
-app.get('/api/health', (req: express.Request, res: express.Response) => {
+app.get('/api/health', (_req: express.Request, res: express.Response) => {
   res.json({ status: 'success', message: 'The Bookmark API is alive!' });
 });
 
@@ -427,7 +427,7 @@ app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Res
   res.json({ message: "Import started", count: insertedBookmarks.length });
 
   // Background worker loop
-  (async () => {
+  void (async () => {
     const user = await User.findOne({ userId });
     const userCategories = user?.categories?.length ? user.categories : ['General'];
     const categoryList = JSON.stringify(userCategories);
