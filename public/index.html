@@ -851,236 +851,159 @@
     let currentFilter = 'All';
 
     // --- ILLUSTRATIONS FOR CATEGORIES ---
+    // The templates contain ONLY the inner path/shapes of the icons.
+    // They will be wrapped in a standard background container circle.
     const illustrationTemplates = {
         tech: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="20" width="80" height="60" rx="6" fill="#141419" stroke="url(#techGrad)" stroke-width="2" />
-            <circle cx="20" cy="28" r="2" fill="#ff758c" />
-            <circle cx="26" cy="28" r="2" fill="#ff7eb3" />
-            <circle cx="32" cy="28" r="2" fill="#a78bfa" />
-            <line x1="20" y1="42" x2="50" y2="42" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" stroke-dasharray="30" stroke-dashoffset="30">
-              <animate attributeName="stroke-dashoffset" values="30;0;30" dur="4s" repeatCount="indefinite" />
-            </line>
-            <line x1="20" y1="52" x2="75" y2="52" stroke="#ff7eb3" stroke-width="3" stroke-linecap="round" stroke-dasharray="55" stroke-dashoffset="55">
-              <animate attributeName="stroke-dashoffset" values="55;0;55" dur="5s" repeatCount="indefinite" />
-            </line>
-            <line x1="20" y1="62" x2="40" y2="62" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round" stroke-dasharray="20" stroke-dashoffset="20">
-              <animate attributeName="stroke-dashoffset" values="20;0;20" dur="3s" repeatCount="indefinite" />
-            </line>
-            <defs>
-              <linearGradient id="techGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <rect x="10" y="20" width="80" height="60" rx="6" fill="#141419" stroke="url(#sharedIconGrad)" stroke-width="2" />
+          <circle cx="20" cy="28" r="2" fill="#818cf8" />
+          <circle cx="26" cy="28" r="2" fill="#a78bfa" />
+          <circle cx="32" cy="28" r="2" fill="#c084fc" />
+          <line x1="20" y1="42" x2="50" y2="42" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" stroke-dasharray="30" stroke-dashoffset="30">
+            <animate attributeName="stroke-dashoffset" values="30;0;30" dur="4s" repeatCount="indefinite" />
+          </line>
+          <line x1="20" y1="52" x2="75" y2="52" stroke="#c084fc" stroke-width="3" stroke-linecap="round" stroke-dasharray="55" stroke-dashoffset="55">
+            <animate attributeName="stroke-dashoffset" values="55;0;55" dur="5s" repeatCount="indefinite" />
+          </line>
+          <line x1="20" y1="62" x2="40" y2="62" stroke="#8b5cf6" stroke-width="3" stroke-linecap="round" stroke-dasharray="20" stroke-dashoffset="20">
+            <animate attributeName="stroke-dashoffset" values="20;0;20" dur="3s" repeatCount="indefinite" />
+          </line>
         `,
         travel: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <line x1="5" y1="75" x2="95" y2="75" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="6,4">
-               <animate attributeName="stroke-dashoffset" values="0;20" dur="1.5s" repeatCount="indefinite" />
-            </line>
-            <g class="car-group">
-              <path d="M 22 65 L 28 48 L 58 48 L 68 65 L 76 65 A 4 4 0 0 1 80 69 L 16 69 A 4 4 0 0 1 20 65 Z" fill="url(#travelGrad)" />
-              <rect x="33" y="52" width="10" height="7" fill="#09090b" rx="1" />
-              <rect x="47" y="52" width="10" height="7" fill="#09090b" rx="1" />
-              <circle cx="32" cy="69" r="6" fill="#09090b" stroke="#ff7eb3" stroke-width="1.5">
-                 <animateTransform attributeName="transform" type="rotate" from="0 32 69" to="360 32 69" dur="0.8s" repeatCount="indefinite" />
-              </circle>
-              <circle cx="62" cy="69" r="6" fill="#09090b" stroke="#ff7eb3" stroke-width="1.5">
-                 <animateTransform attributeName="transform" type="rotate" from="0 62 69" to="360 62 69" dur="0.8s" repeatCount="indefinite" />
-              </circle>
-            </g>
-            <defs>
-              <linearGradient id="travelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <line x1="5" y1="75" x2="95" y2="75" stroke="rgba(255,255,255,0.15)" stroke-width="2" stroke-dasharray="6,4">
+             <animate attributeName="stroke-dashoffset" values="0;20" dur="1.5s" repeatCount="indefinite" />
+          </line>
+          <g class="car-group">
+            <path d="M 22 65 L 28 48 L 58 48 L 68 65 L 76 65 A 4 4 0 0 1 80 69 L 16 69 A 4 4 0 0 1 20 65 Z" fill="url(#sharedIconGrad)" />
+            <rect x="33" y="52" width="10" height="7" fill="#09090b" rx="1" />
+            <rect x="47" y="52" width="10" height="7" fill="#09090b" rx="1" />
+            <circle cx="32" cy="69" r="6" fill="#09090b" stroke="#c084fc" stroke-width="1.5">
+               <animateTransform attributeName="transform" type="rotate" from="0 32 69" to="360 32 69" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="62" cy="69" r="6" fill="#09090b" stroke="#c084fc" stroke-width="1.5">
+               <animateTransform attributeName="transform" type="rotate" from="0 62 69" to="360 62 69" dur="0.8s" repeatCount="indefinite" />
+            </circle>
+          </g>
         `,
         finance: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 15 75 L 35 55 L 55 60 L 85 30" fill="none" stroke="url(#finGrad)" stroke-width="3" stroke-linecap="round">
-               <animate attributeName="stroke-dasharray" values="0,150;150,0" dur="3s" repeatCount="indefinite" />
-            </path>
-            <circle cx="85" cy="30" r="4" fill="#ff7eb3" />
-            <g class="coin-group">
-              <circle cx="50" cy="45" r="12" fill="url(#finGrad)" stroke="#141419" stroke-width="2" />
-              <text x="50" y="49" font-size="12" font-weight="bold" fill="#09090b" text-anchor="middle">$</text>
-            </g>
-            <defs>
-              <linearGradient id="finGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <path d="M 15 75 L 35 55 L 55 60 L 85 30" fill="none" stroke="url(#sharedIconGrad)" stroke-width="3" stroke-linecap="round">
+             <animate attributeName="stroke-dasharray" values="0,150;150,0" dur="3s" repeatCount="indefinite" />
+          </path>
+          <circle cx="85" cy="30" r="4" fill="#c084fc" />
+          <g class="coin-group">
+            <circle cx="50" cy="45" r="12" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <text x="50" y="49" font-size="12" font-weight="bold" fill="#09090b" text-anchor="middle">$</text>
+          </g>
         `,
         reading: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="book-group">
-              <path d="M 50 65 Q 35 60 15 65 L 15 35 Q 35 30 50 35 Z" fill="url(#readGrad)" stroke="#141419" stroke-width="1.5" />
-              <path d="M 50 65 Q 65 60 85 65 L 85 35 Q 65 30 50 35 Z" fill="url(#readGrad)" stroke="#141419" stroke-width="1.5" />
-              <line x1="50" y1="35" x2="50" y2="65" stroke="#141419" stroke-width="2" />
-            </g>
-            <defs>
-              <linearGradient id="readGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="book-group">
+            <path d="M 50 65 Q 35 60 15 65 L 15 35 Q 35 30 50 35 Z" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="1.5" />
+            <path d="M 50 65 Q 65 60 85 65 L 85 35 Q 65 30 50 35 Z" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="1.5" />
+            <line x1="50" y1="35" x2="50" y2="65" stroke="#141419" stroke-width="2" />
+          </g>
         `,
         cooking: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 25 50 L 75 50 L 70 80 A 10 10 0 0 1 60 90 L 40 90 A 10 10 0 0 1 30 80 Z" fill="url(#cookGrad)" stroke="#141419" stroke-width="2" />
-            <rect x="20" y="45" width="60" height="6" rx="3" fill="#141419" />
-            <path class="steam-line" d="M 35 35 Q 38 25 35 15" fill="none" stroke="#ff7eb3" stroke-width="2" stroke-linecap="round" />
-            <path class="steam-line" d="M 50 35 Q 53 25 50 15" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" />
-            <path class="steam-line" d="M 65 35 Q 68 25 65 15" fill="none" stroke="#ff7eb3" stroke-width="2" stroke-linecap="round" />
-            <defs>
-              <linearGradient id="cookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <path d="M 25 50 L 75 50 L 70 80 A 10 10 0 0 1 60 90 L 40 90 A 10 10 0 0 1 30 80 Z" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+          <rect x="20" y="45" width="60" height="6" rx="3" fill="#141419" />
+          <path class="steam-line" d="M 35 35 Q 38 25 35 15" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" />
+          <path class="steam-line" d="M 50 35 Q 53 25 50 15" fill="none" stroke="#c084fc" stroke-width="2" stroke-linecap="round" />
+          <path class="steam-line" d="M 65 35 Q 68 25 65 15" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" />
         `,
         music: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="music-note">
-              <circle cx="35" cy="70" r="10" fill="url(#musicGrad)" />
-              <circle cx="70" cy="60" r="10" fill="url(#musicGrad)" />
-              <path d="M 45 70 L 45 30 L 80 20 L 80 60" fill="none" stroke="url(#musicGrad)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" />
-              <path d="M 45 40 L 80 30" fill="none" stroke="url(#musicGrad)" stroke-width="4" />
-            </g>
-            <defs>
-              <linearGradient id="musicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="music-note">
+            <circle cx="35" cy="70" r="10" fill="url(#sharedIconGrad)" />
+            <circle cx="70" cy="60" r="10" fill="url(#sharedIconGrad)" />
+            <path d="M 45 70 L 45 30 L 80 20 L 80 60" fill="none" stroke="url(#sharedIconGrad)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" />
+            <path d="M 45 40 L 80 30" fill="none" stroke="url(#sharedIconGrad)" stroke-width="4" />
+          </g>
         `,
         gaming: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="gamepad">
-              <rect x="15" y="30" width="70" height="40" rx="20" fill="url(#gameGrad)" stroke="#141419" stroke-width="2" />
-              <path d="M 30 45 L 30 55 M 25 50 L 35 50" stroke="#141419" stroke-width="3" stroke-linecap="round" />
-              <circle cx="65" cy="45" r="3" fill="#141419" />
-              <circle cx="71" cy="50" r="3" fill="#141419" />
-              <circle cx="65" cy="55" r="3" fill="#141419" />
-              <circle cx="42" cy="55" r="6" fill="#141419" opacity="0.3" />
-              <circle cx="58" cy="55" r="6" fill="#141419" opacity="0.3" />
-            </g>
-            <defs>
-              <linearGradient id="gameGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="gamepad">
+            <rect x="15" y="30" width="70" height="40" rx="20" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <path d="M 30 45 L 30 55 M 25 50 L 35 50" stroke="#141419" stroke-width="3" stroke-linecap="round" />
+            <circle cx="65" cy="45" r="3" fill="#141419" />
+            <circle cx="71" cy="50" r="3" fill="#141419" />
+            <circle cx="65" cy="55" r="3" fill="#141419" />
+            <circle cx="42" cy="55" r="6" fill="#141419" opacity="0.3" />
+            <circle cx="58" cy="55" r="6" fill="#141419" opacity="0.3" />
+          </g>
         `,
         jobs: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="briefcase">
-              <rect x="20" y="35" width="60" height="45" rx="6" fill="url(#jobGrad)" stroke="#141419" stroke-width="2" />
-              <path d="M 40 35 L 40 25 A 5 5 0 0 1 45 20 L 55 20 A 5 5 0 0 1 60 25 L 60 35" fill="none" stroke="url(#jobGrad)" stroke-width="3" />
-              <rect x="44" y="50" width="12" height="8" rx="2" fill="#141419" />
-            </g>
-            <defs>
-              <linearGradient id="jobGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="briefcase">
+            <rect x="20" y="35" width="60" height="45" rx="6" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <path d="M 40 35 L 40 25 A 5 5 0 0 1 45 20 L 55 20 A 5 5 0 0 1 60 25 L 60 35" fill="none" stroke="url(#sharedIconGrad)" stroke-width="3" />
+            <rect x="44" y="50" width="12" height="8" rx="2" fill="#141419" />
+          </g>
         `,
         fitness: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="heart-pulse">
-              <path d="M 50 30 C 50 30 40 15 25 25 C 10 35 20 60 50 80 C 80 60 90 35 75 25 C 60 15 50 30 50 30 Z" fill="url(#fitGrad)" stroke="#141419" stroke-width="2" />
-            </g>
-            <defs>
-              <linearGradient id="fitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="heart-pulse">
+            <path d="M 50 30 C 50 30 40 15 25 25 C 10 35 20 60 50 80 C 80 60 90 35 75 25 C 60 15 50 30 50 30 Z" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+          </g>
         `,
         design: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="design-palette">
-              <circle cx="50" cy="50" r="35" fill="url(#designGrad)" stroke="#141419" stroke-width="2" />
-              <circle cx="35" cy="40" r="5" fill="#09090b" />
-              <circle cx="50" cy="32" r="5" fill="#09090b" />
-              <circle cx="65" cy="40" r="5" fill="#09090b" />
-              <circle cx="58" cy="60" r="5" fill="#09090b" />
-              <circle cx="38" cy="62" r="8" fill="#09090b" />
-            </g>
-            <defs>
-              <linearGradient id="designGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="design-palette">
+            <circle cx="50" cy="50" r="35" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <circle cx="35" cy="40" r="5" fill="#09090b" />
+            <circle cx="50" cy="32" r="5" fill="#09090b" />
+            <circle cx="65" cy="40" r="5" fill="#09090b" />
+            <circle cx="58" cy="60" r="5" fill="#09090b" />
+            <circle cx="38" cy="62" r="8" fill="#09090b" />
+          </g>
         `,
         news: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="newspaper">
-              <rect x="15" y="20" width="70" height="60" rx="4" fill="url(#newsGrad)" stroke="#141419" stroke-width="2" />
-              <line x1="25" y1="35" x2="75" y2="35" stroke="#141419" stroke-width="3" stroke-linecap="round" />
-              <line x1="25" y1="48" x2="55" y2="48" stroke="#141419" stroke-width="2" stroke-linecap="round" />
-              <line x1="25" y1="58" x2="50" y2="58" stroke="#141419" stroke-width="2" stroke-linecap="round" />
-              <line x1="25" y1="68" x2="65" y2="68" stroke="#141419" stroke-width="2" stroke-linecap="round" />
-              <rect x="60" y="45" width="15" height="18" rx="2" fill="#141419" opacity="0.4" />
-            </g>
-            <defs>
-              <linearGradient id="newsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="newspaper">
+            <rect x="15" y="20" width="70" height="60" rx="4" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <line x1="25" y1="35" x2="75" y2="35" stroke="#141419" stroke-width="3" stroke-linecap="round" />
+            <line x1="25" y1="48" x2="55" y2="48" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+            <line x1="25" y1="58" x2="50" y2="58" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+            <line x1="25" y1="68" x2="65" y2="68" stroke="#141419" stroke-width="2" stroke-linecap="round" />
+            <rect x="60" y="45" width="15" height="18" rx="2" fill="#141419" opacity="0.4" />
+          </g>
         `,
         productivity: `
-          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="clock-group">
-              <circle cx="50" cy="50" r="35" fill="url(#prodGrad)" stroke="#141419" stroke-width="2" />
-              <line x1="50" y1="50" x2="50" y2="30" stroke="#141419" stroke-width="3" stroke-linecap="round">
-                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s" repeatCount="indefinite" />
-              </line>
-              <line x1="50" y1="50" x2="68" y2="50" stroke="#141419" stroke-width="3" stroke-linecap="round">
-                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="60s" repeatCount="indefinite" />
-              </line>
-              <circle cx="50" cy="50" r="3" fill="#141419" />
-            </g>
-            <defs>
-              <linearGradient id="prodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <g class="clock-group">
+            <circle cx="50" cy="50" r="35" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <line x1="50" y1="50" x2="50" y2="30" stroke="#141419" stroke-width="3" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s" repeatCount="indefinite" />
+            </line>
+            <line x1="50" y1="50" x2="68" y2="50" stroke="#141419" stroke-width="3" stroke-linecap="round">
+              <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="60s" repeatCount="indefinite" />
+            </line>
+            <circle cx="50" cy="50" r="3" fill="#141419" />
+          </g>
         `,
         youtube: `
+          <g class="yt-icon">
+            <rect x="15" y="25" width="70" height="50" rx="10" fill="url(#sharedIconGrad)" stroke="#141419" stroke-width="2" />
+            <path d="M 42 40 L 62 50 L 42 60 Z" fill="#141419" />
+          </g>
+        `
+    };
+
+    function wrapIllustration(innerContent) {
+        return `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <g class="yt-icon">
-              <rect x="15" y="25" width="70" height="50" rx="10" fill="url(#ytGrad)" stroke="#141419" stroke-width="2" />
-              <path d="M 42 40 L 62 50 L 42 60 Z" fill="#141419" />
+            <!-- Standard Background Container -->
+            <circle cx="50" cy="50" r="38" fill="rgba(20, 20, 25, 0.4)" stroke="url(#sharedBgGrad)" stroke-width="2" />
+            
+            <!-- Category Icon (scaled/centered) -->
+            <g transform="translate(15, 15) scale(0.7)">
+              ${innerContent}
             </g>
+            
             <defs>
-              <linearGradient id="ytGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#ff758c" />
-                <stop offset="100%" stop-color="#a78bfa" />
+              <linearGradient id="sharedBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity="0.5" />
+                <stop offset="100%" stop-color="#a855f7" stop-opacity="0.5" />
+              </linearGradient>
+              <linearGradient id="sharedIconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#818cf8" />
+                <stop offset="100%" stop-color="#c084fc" />
               </linearGradient>
             </defs>
           </svg>
-        `
-    };
+        `;
+    }
 
     function updateIllustrations(filter) {
         const leftDiv = document.getElementById('illustrationLeft');
@@ -1136,8 +1059,8 @@
             rightTheme = 'reading';
         }
 
-        leftDiv.innerHTML = illustrationTemplates[leftTheme] || '';
-        rightDiv.innerHTML = illustrationTemplates[rightTheme] || '';
+        leftDiv.innerHTML = wrapIllustration(illustrationTemplates[leftTheme] || '');
+        rightDiv.innerHTML = wrapIllustration(illustrationTemplates[rightTheme] || '');
     }
     let userCategories = [];
 
