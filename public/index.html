@@ -1025,43 +1025,69 @@
         `,
         gaming: `
           <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="gameGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#8b5cf6" />
+                <stop offset="100%" stop-color="#c084fc" />
+              </linearGradient>
+            </defs>
+
+            <!-- Floating animation for the whole thing -->
             <g>
-              <animateTransform attributeName="transform" type="translate" values="0,3; 0,-3; 0,3" dur="2s" repeatCount="indefinite" />
-              <defs>
-                <linearGradient id="gameGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#8b5cf6" />
-                  <stop offset="100%" stop-color="#c084fc" />
-                </linearGradient>
-              </defs>
+              <animateTransform attributeName="transform" type="translate" values="0,2; 0,-2; 0,2" dur="3s" repeatCount="indefinite" />
               
-              <!-- Wrist/Arm -->
-              <rect x="35" y="65" width="30" height="40" rx="5" fill="url(#gameGrad2)" stroke="#141419" stroke-width="2" />
-              <path d="M 35 65 L 35 80 C 25 75 25 55 35 55 Z" fill="url(#gameGrad2)" />
+              <!-- Wire -->
+              <path d="M 50 38 C 50 20 70 25 60 10 C 50 -5 50 -10 50 -10" fill="none" stroke="url(#gameGrad2)" stroke-width="2" />
               
-              <!-- Gamepad -->
-              <rect x="15" y="30" width="70" height="40" rx="20" fill="#09090b" stroke="url(#gameGrad2)" stroke-width="2.5" />
+              <!-- Controller Base -->
+              <path d="M 20 40 C 35 35 65 35 80 40 C 95 45 90 70 80 75 C 70 80 60 70 50 65 C 40 70 30 80 20 75 C 10 70 5 45 20 40 Z" fill="#09090b" stroke="url(#gameGrad2)" stroke-width="2" />
               
-              <!-- D-pad -->
-              <path d="M 26 43 L 31 43 L 31 38 L 35 38 L 35 43 L 40 43 L 40 47 L 35 47 L 35 52 L 31 52 L 31 47 L 26 47 Z" fill="#c084fc" />
+              <!-- D-Pad (Left) -->
+              <g fill="#c084fc">
+                <rect x="27" y="47" width="12" height="4" rx="1" />
+                <rect x="31" y="43" width="4" height="12" rx="1" />
+              </g>
+
+              <!-- Action Buttons (Right) -->
+              <circle cx="68" cy="45" r="3" fill="#c084fc" />
+              <circle cx="74" cy="51" r="3" fill="#c084fc" />
+              <circle cx="62" cy="51" r="3" fill="#c084fc" />
+              <circle cx="68" cy="57" r="3" fill="#c084fc" />
+
+              <!-- Center buttons -->
+              <rect x="42" y="45" width="5" height="2" rx="1" fill="#8b5cf6" />
+              <rect x="53" y="45" width="5" height="2" rx="1" fill="#8b5cf6" />
+              <circle cx="50" cy="53" r="4" fill="none" stroke="#8b5cf6" stroke-width="1.5" />
+
+              <!-- Hands wrapping from the sides -->
+              <!-- Left Wrist/Hand -->
+              <path d="M -5 95 C 10 75 12 50 25 40 C 30 37 35 40 32 45 C 28 50 20 60 15 95 Z" fill="url(#gameGrad2)" />
               
-              <!-- Buttons -->
-              <circle cx="73" cy="40" r="3" fill="#c084fc" />
-              <circle cx="79" cy="46" r="3" fill="#c084fc" />
-              <circle cx="67" cy="46" r="3" fill="#c084fc" />
-              <circle cx="73" cy="52" r="3" fill="#c084fc" />
+              <!-- Right Wrist/Hand -->
+              <path d="M 105 95 C 90 75 88 50 75 40 C 70 37 65 40 68 45 C 72 50 80 60 85 95 Z" fill="url(#gameGrad2)" />
+
+              <!-- Left Index Finger overlapping top -->
+              <path d="M 25 40 C 25 35 35 35 35 40 C 35 45 30 43 25 40" fill="url(#gameGrad2)" />
               
-              <!-- Analog Sticks -->
-              <circle cx="45" cy="58" r="6" fill="#141419" stroke="url(#gameGrad2)" stroke-width="1.5" />
-              <circle cx="60" cy="58" r="6" fill="#141419" stroke="url(#gameGrad2)" stroke-width="1.5" />
-              
-              <!-- Fingers overlapping the top -->
-              <rect x="25" y="25" width="10" height="15" rx="5" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
-              <rect x="37" y="23" width="10" height="17" rx="5" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
-              <rect x="53" y="23" width="10" height="17" rx="5" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
-              <rect x="65" y="26" width="10" height="14" rx="5" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
-              
-              <!-- Thumb over the front -->
-              <path d="M 33 65 C 25 60 25 45 33 45 C 38 45 40 50 38 55 C 36 60 38 65 33 65 Z" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
+              <!-- Right Index Finger overlapping top -->
+              <path d="M 75 40 C 75 35 65 35 65 40 C 65 45 70 43 75 40" fill="url(#gameGrad2)" />
+
+              <!-- Animated Thumbs -->
+              <!-- Left Thumb (pressing D-Pad) -->
+              <g transform="translate(18, 60)">
+                <g>
+                  <animateTransform attributeName="transform" type="rotate" values="0; 15; -5; 0" dur="0.4s" repeatCount="indefinite" />
+                  <path d="M 0 0 C 0 -10 10 -15 15 -10 C 20 -5 10 5 0 0 Z" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
+                </g>
+              </g>
+
+              <!-- Right Thumb (pressing action buttons) -->
+              <g transform="translate(82, 60)">
+                <g>
+                  <animateTransform attributeName="transform" type="rotate" values="0; -25; 10; 0" dur="0.6s" repeatCount="indefinite" />
+                  <path d="M 0 0 C 0 -10 -10 -15 -15 -10 C -20 -5 -10 5 0 0 Z" fill="url(#gameGrad2)" stroke="#141419" stroke-width="1.5" />
+                </g>
+              </g>
             </g>
           </svg>
         `,
