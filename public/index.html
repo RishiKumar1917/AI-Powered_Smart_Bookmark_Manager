@@ -13,9 +13,9 @@
             --surface-color: rgba(20, 20, 25, 0.6); /* Very dark semi-transparent */
             --text-primary: #ffffff;
             --text-secondary: #a1a1aa;
-            --accent: #ff7eb3;
-            --accent-gradient: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);
-            --text-gradient: linear-gradient(to right, #f8a5c2, #a78bfa, #8b5cf6); /* Pink to purple to blue */
+            --accent: #8b5cf6; /* Vibrant violet */
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); /* Indigo to purple */
+            --text-gradient: linear-gradient(to right, #818cf8, #a78bfa, #c084fc); /* Light indigo to light purple */
         }
 
         body {
@@ -115,8 +115,8 @@
             font-family: 'Outfit', sans-serif;
         }
         input:focus { 
-            border-color: rgba(255,126,179,0.5); 
-            box-shadow: 0 0 20px rgba(255,126,179,0.15);
+            border-color: rgba(99, 102, 241, 0.5); 
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
             background: rgba(0, 0, 0, 0.5);
         }
 
@@ -198,8 +198,8 @@
         
         .tag {
             display: inline-block;
-            background: rgba(255, 126, 179, 0.1);
-            color: #ff7eb3;
+            background: rgba(139, 92, 246, 0.1);
+            color: #a78bfa;
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 12px;
@@ -207,7 +207,7 @@
             margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            border: 1px solid rgba(255, 126, 179, 0.2);
+            border: 1px solid rgba(139, 92, 246, 0.2);
         }
         
         .bookmark-title {
@@ -287,7 +287,7 @@
             width: 70px;
             height: 70px;
             border-radius: 50%;
-            background: conic-gradient(var(--accent) 0%, rgba(255, 126, 179, 0.15) 0%);
+            background: conic-gradient(var(--accent) 0%, rgba(139, 92, 246, 0.15) 0%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -519,7 +519,7 @@
             background: var(--accent-gradient);
             color: white;
             border-color: transparent;
-            box-shadow: 0 4px 15px rgba(255, 117, 140, 0.3);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
         }
         .custom-interest-row {
             display: flex;
@@ -555,12 +555,12 @@
             border-radius: 16px;
             cursor: pointer;
             font-family: 'Outfit', sans-serif;
-            box-shadow: 0 8px 20px rgba(255, 117, 140, 0.3);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
             transition: all 0.3s;
         }
         .get-started-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(255, 117, 140, 0.4);
+            box-shadow: 0 12px 25px rgba(99, 102, 241, 0.4);
         }
         .settings-btn {
             background: rgba(255,255,255,0.05);
@@ -602,8 +602,8 @@
             border-color: var(--accent);
         }
         .import-status-banner {
-            background: rgba(255, 126, 179, 0.08);
-            border: 1px solid rgba(255, 126, 179, 0.2);
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
             border-radius: 14px;
             padding: 12px 20px;
             display: flex;
@@ -656,6 +656,36 @@
             padding-bottom: 20px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
+        
+        /* Settings Tab Styles */
+        .settings-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 10px;
+        }
+        .settings-tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .settings-tab-btn:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+        .settings-tab-btn.active {
+            color: white;
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
@@ -697,6 +727,14 @@
             <input type="text" id="customInterestInput" placeholder="Add a custom interest..." aria-label="Add a custom interest">
             <button onclick="addCustomInterest()">+ Add</button>
         </div>
+        
+        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px; margin-bottom: 30px;">
+            <h3 style="margin-bottom: 8px; font-size: 1.1rem; font-weight: 600;">Import Chrome Bookmarks</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">Start with your existing bookmarks! Upload your exported HTML bookmarks file.</p>
+            <button class="sync-btn" onclick="triggerImport()" style="width: auto; padding: 12px 24px; font-size: 15px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">🔄 Upload Bookmarks File</button>
+            <input type="file" id="bookmarksFileInput" accept=".html" style="display:none" onchange="handleImportFile(event)">
+        </div>
+
         <button class="get-started-btn" onclick="saveInterests()">Get Started →</button>
     </div>
 
@@ -705,10 +743,7 @@
         <div class="header-actions">
             <span id="userGreeting">Hello, User</span>
             <div class="header-right">
-                <button class="sync-btn" onclick="triggerImport()" title="Sync Chrome Bookmarks">🔄 Sync</button>
-                <input type="file" id="bookmarksFileInput" accept=".html" style="display:none" onchange="handleImportFile(event)">
-                <button class="settings-btn" onclick="openSettings()" title="Edit Interests">⚙️</button>
-                <button class="logout-btn" onclick="logout()">Sign Out</button>
+                <button class="settings-btn" onclick="openSettings()" title="Open Settings" style="font-size: 24px; border: none; background: transparent; padding: 0; width: auto; height: auto; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; transition: color 0.3s;">☰</button>
             </div>
         </div>
 
@@ -741,42 +776,58 @@
 
     <!-- SETTINGS SCREEN -->
     <div id="settingsScreen" style="display: none;">
-        <h2 style="font-weight: 700; margin-bottom: 10px;">Settings</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 30px;">Manage your interests and security settings.</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+            <div>
+                <h2 style="font-weight: 700; margin-bottom: 4px; background: var(--text-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Settings</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Customize your profile and privacy preferences.</p>
+            </div>
+            <button class="logout-btn" onclick="logout()" style="margin: 0; padding: 10px 20px; font-size: 14px; border-radius: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; font-weight: 600; cursor: pointer; transition: all 0.3s;">Sign Out</button>
+        </div>
+
+        <div class="settings-tabs">
+            <button id="tabBtnInterests" class="settings-tab-btn active" onclick="switchSettingsTab('interests')">Interests</button>
+            <button id="tabBtnSecurity" class="settings-tab-btn" onclick="switchSettingsTab('security')">🔒 Security</button>
+        </div>
         
-        <div class="settings-section">
-            <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">Choose Your Interests</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">Pick topics that matter to you. The AI uses these to organize bookmarks.</p>
-            <div class="interests-grid" id="settingsInterestsGrid"></div>
-            <div class="custom-interest-row">
-                <input type="text" id="settingsCustomInterestInput" placeholder="Add a custom interest..." aria-label="Add a custom interest">
-                <button onclick="addCustomInterestSettings()">+ Add</button>
+        <!-- Interests Tab Content -->
+        <div id="settingsTabInterests" class="settings-tab-content">
+            <div class="settings-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">Choose Your Interests</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">Pick topics that matter to you. The AI uses these to organize bookmarks.</p>
+                <div class="interests-grid" id="settingsInterestsGrid"></div>
+                <div class="custom-interest-row">
+                    <input type="text" id="settingsCustomInterestInput" placeholder="Add a custom interest..." aria-label="Add a custom interest">
+                    <button onclick="addCustomInterestSettings()">+ Add</button>
+                </div>
             </div>
         </div>
         
-        <div class="settings-section" style="border-bottom: none;">
-            <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">🔒 Security (End-to-End Encryption)</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
-                Encrypt your URLs, titles, and summaries locally before saving. 
-                No one else (including the database administrator) can read your bookmarks.
-                <br><strong style="color: #fca5a5;">Warning: You must remember your PIN. If lost, your bookmarks cannot be decrypted.</strong>
-            </p>
-            
-            <div style="display: flex; align-items: center; gap: 15px; margin: 15px 0;">
-                <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
-                     <input type="checkbox" id="e2eToggle" onchange="handleE2EToggle(event)">
-                     <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px;"></span>
-                </label>
-                <span id="e2eStatusText" style="color: var(--text-secondary); font-weight: 500; font-size: 0.95rem;">Disabled</span>
-            </div>
-            
-            <div id="pinSetupContainer" style="display: none; margin-top: 15px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-                <input type="password" id="pinInput" placeholder="Enter a 4-digit PIN or passphrase" aria-label="Enter a PIN or passphrase" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
-                <button class="get-started-btn" onclick="setupE2E()" style="padding: 10px; font-size: 14px; border-radius: 10px; margin-top: 5px; box-shadow: none;">Enable E2E</button>
+        <!-- Security Tab Content -->
+        <div id="settingsTabSecurity" class="settings-tab-content" style="display: none;">
+            <div class="settings-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">End-to-End Encryption (E2E)</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem; line-height: 1.5;">
+                    Encrypt your URLs, titles, and summaries locally before saving. 
+                    No one else (including the database administrator) can read your bookmarks.
+                    <br><strong style="color: #fca5a5;">Warning: You must remember your PIN. If lost, your bookmarks cannot be decrypted.</strong>
+                </p>
+                
+                <div style="display: flex; align-items: center; gap: 15px; margin: 20px 0;">
+                    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                         <input type="checkbox" id="e2eToggle" onchange="handleE2EToggle(event)">
+                         <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px;"></span>
+                    </label>
+                    <span id="e2eStatusText" style="color: var(--text-secondary); font-weight: 500; font-size: 0.95rem;">Disabled</span>
+                </div>
+                
+                <div id="pinSetupContainer" style="display: none; margin-top: 15px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                    <input type="password" id="pinInput" placeholder="Enter a 4-digit PIN or passphrase" aria-label="Enter a PIN or passphrase" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                    <button class="get-started-btn" onclick="setupE2E()" style="padding: 10px; font-size: 14px; border-radius: 10px; margin-top: 5px; box-shadow: none;">Enable E2E</button>
+                </div>
             </div>
         </div>
         
-        <div style="display: flex; gap: 15px; margin-top: 30px;">
+        <div style="display: flex; gap: 15px; margin-top: 35px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
             <button class="get-started-btn" onclick="saveSettings()" style="flex: 1;">Save Changes</button>
             <button class="get-started-btn" onclick="closeSettings()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; box-shadow: none;">Cancel</button>
         </div>
@@ -1311,6 +1362,9 @@
         document.getElementById('dashboard').style.display = 'none';
         document.getElementById('settingsScreen').style.display = 'block';
         
+        // Default tab
+        switchSettingsTab('interests');
+        
         // Setup E2E Toggle state
         const e2eEnabled = localStorage.getItem('e2eEnabled') === 'true';
         const toggle = document.getElementById('e2eToggle');
@@ -1324,6 +1378,25 @@
     function closeSettings() {
         document.getElementById('settingsScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
+    }
+
+    function switchSettingsTab(tabName) {
+        // Hide all tab contents
+        document.getElementById('settingsTabInterests').style.display = 'none';
+        document.getElementById('settingsTabSecurity').style.display = 'none';
+        
+        // Remove active class from all tab buttons
+        document.getElementById('tabBtnInterests').classList.remove('active');
+        document.getElementById('tabBtnSecurity').classList.remove('active');
+        
+        // Show selected tab content and activate button
+        if (tabName === 'interests') {
+            document.getElementById('settingsTabInterests').style.display = 'block';
+            document.getElementById('tabBtnInterests').classList.add('active');
+        } else if (tabName === 'security') {
+            document.getElementById('settingsTabSecurity').style.display = 'block';
+            document.getElementById('tabBtnSecurity').classList.add('active');
+        }
     }
 
     function renderSettingsInterestsGrid() {
@@ -1629,14 +1702,14 @@
         const percentText = document.getElementById('progressPercent');
         
         ringContainer.style.display = 'flex';
-        ring.style.background = `conic-gradient(var(--accent) 0%, rgba(255, 126, 179, 0.15) 0%)`;
+        ring.style.background = `conic-gradient(var(--accent) 0%, rgba(139, 92, 246, 0.15) 0%)`;
         percentText.innerText = '0%';
         
         let progress = 0;
         const interval = setInterval(() => {
             progress += Math.floor(Math.random() * 15) + 5;
             if (progress > 95) progress = 95;
-            ring.style.background = `conic-gradient(var(--accent) ${progress}%, rgba(255, 126, 179, 0.15) ${progress}%)`;
+            ring.style.background = `conic-gradient(var(--accent) ${progress}%, rgba(139, 92, 246, 0.15) ${progress}%)`;
             percentText.innerText = progress + '%';
         }, 600);
         
@@ -1679,7 +1752,7 @@
             console.error("Save bookmark failed", e);
         } finally {
             clearInterval(interval);
-            ring.style.background = `conic-gradient(var(--accent) 100%, rgba(255, 126, 179, 0.15) 100%)`;
+            ring.style.background = `conic-gradient(var(--accent) 100%, rgba(139, 92, 246, 0.15) 100%)`;
             percentText.innerText = '100%';
             
             setTimeout(() => {
