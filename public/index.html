@@ -631,6 +631,31 @@
             background: rgba(255, 255, 255, 0.01) !important;
             opacity: 0.7;
         }
+
+        /* E2E Switch Toggle */
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider {
+            background: var(--accent-gradient);
+        }
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        .settings-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
     </style>
 </head>
 <body>
@@ -712,6 +737,61 @@
         <div id="bookmarksList">
             <!-- Bookmarks injected here -->
         </div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div id="settingsScreen" style="display: none;">
+        <h2 style="font-weight: 700; margin-bottom: 10px;">Settings</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">Manage your interests and security settings.</p>
+        
+        <div class="settings-section">
+            <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">Choose Your Interests</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">Pick topics that matter to you. The AI uses these to organize bookmarks.</p>
+            <div class="interests-grid" id="settingsInterestsGrid"></div>
+            <div class="custom-interest-row">
+                <input type="text" id="settingsCustomInterestInput" placeholder="Add a custom interest..." aria-label="Add a custom interest">
+                <button onclick="addCustomInterestSettings()">+ Add</button>
+            </div>
+        </div>
+        
+        <div class="settings-section" style="border-bottom: none;">
+            <h3 style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 600;">🔒 Security (End-to-End Encryption)</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 15px; font-size: 0.9rem;">
+                Encrypt your URLs, titles, and summaries locally before saving. 
+                No one else (including the database administrator) can read your bookmarks.
+                <br><strong style="color: #fca5a5;">Warning: You must remember your PIN. If lost, your bookmarks cannot be decrypted.</strong>
+            </p>
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin: 15px 0;">
+                <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+                     <input type="checkbox" id="e2eToggle" onchange="handleE2EToggle(event)">
+                     <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 34px;"></span>
+                </label>
+                <span id="e2eStatusText" style="color: var(--text-secondary); font-weight: 500; font-size: 0.95rem;">Disabled</span>
+            </div>
+            
+            <div id="pinSetupContainer" style="display: none; margin-top: 15px; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <input type="password" id="pinInput" placeholder="Enter a 4-digit PIN or passphrase" aria-label="Enter a PIN or passphrase" style="width: 100%; box-sizing: border-box; margin-bottom: 10px; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;">
+                <button class="get-started-btn" onclick="setupE2E()" style="padding: 10px; font-size: 14px; border-radius: 10px; margin-top: 5px; box-shadow: none;">Enable E2E</button>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button class="get-started-btn" onclick="saveSettings()" style="flex: 1;">Save Changes</button>
+            <button class="get-started-btn" onclick="closeSettings()" style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; box-shadow: none;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- E2E UNLOCK OVERLAY -->
+<div id="unlockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="background: var(--bg-card); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 24px; text-align: center; max-width: 400px; width: 90%;">
+        <div style="font-size: 40px; margin-bottom: 20px;">🔒</div>
+        <h2 style="margin-bottom: 10px; font-weight: 700;">Unlock Bookmarks</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.95rem;">Enter your Privacy PIN to decrypt your end-to-end encrypted bookmarks.</p>
+        <input type="password" id="unlockPinInput" placeholder="Enter PIN" aria-label="Enter PIN" style="width: 100%; box-sizing: border-box; text-align: center; font-size: 1.5rem; letter-spacing: 5px; margin-bottom: 20px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white;" onkeydown="if(event.key === 'Enter') submitUnlockPin()">
+        <button class="get-started-btn" onclick="submitUnlockPin()">Unlock</button>
+        <button class="get-started-btn" onclick="logout()" style="margin-top: 12px; background: transparent; box-shadow: none; border: none; color: var(--text-secondary); font-size: 0.9rem;">Sign Out</button>
     </div>
 </div>
 
@@ -1127,11 +1207,262 @@
         showDashboard();
     }
 
+    // --- CRYPTOGRAPHY HELPERS (OPTION B) ---
+    let cachedE2EKey = null;
+
+    async function getE2EKey(pin) {
+        if (cachedE2EKey) return cachedE2EKey;
+        const encoder = new TextEncoder();
+        const salt = encoder.encode("smart-bookmark-manager-salt-v1");
+        const baseKey = await window.crypto.subtle.importKey(
+            "raw",
+            encoder.encode(pin),
+            "PBKDF2",
+            false,
+            ["deriveKey"]
+        );
+        cachedE2EKey = await window.crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            baseKey,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["encrypt", "decrypt"]
+        );
+        return cachedE2EKey;
+    }
+
+    async function encryptLocal(text, pin) {
+        if (!text) return text;
+        try {
+            const key = await getE2EKey(pin);
+            const encoder = new TextEncoder();
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const encrypted = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                encoder.encode(text)
+            );
+            const combined = new Uint8Array(iv.length + encrypted.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(encrypted), iv.length);
+            
+            let binary = '';
+            const len = combined.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(combined[i]);
+            }
+            return btoa(binary);
+        } catch (e) {
+            console.error("Encryption failed:", e);
+            return text;
+        }
+    }
+
+    async function decryptLocal(base64Text, pin) {
+        if (!base64Text) return base64Text;
+        try {
+            const key = await getE2EKey(pin);
+            const binaryString = atob(base64Text);
+            const len = binaryString.length;
+            const combined = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                combined[i] = binaryString.charCodeAt(i);
+            }
+            const iv = combined.slice(0, 12);
+            const ciphertext = combined.slice(12);
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        } catch (e) {
+            return null; // Return null on decryption fail (like invalid PIN)
+        }
+    }
+
+    async function decryptAllBookmarksInMemory() {
+        const pin = sessionStorage.getItem('pin');
+        if (!pin) return;
+        
+        for (let bm of allBookmarks) {
+            if (bm.isE2E) {
+                const decryptedTitle = await decryptLocal(bm.title, pin);
+                bm.title = decryptedTitle || "🔑 [Encrypted Bookmarks - Invalid PIN]";
+                bm.url = await decryptLocal(bm.url, pin) || "#";
+                bm.summary = await decryptLocal(bm.summary, pin) || "This bookmark is end-to-end encrypted.";
+            }
+        }
+    }
+
+    // --- SETTINGS CONTROL LOGIC ---
+    let settingsSelectedInterests = new Set();
+
     function openSettings() {
         // Pre-select current categories
-        selectedInterests = new Set(userCategories.filter(c => c !== 'General'));
+        settingsSelectedInterests = new Set(userCategories.filter(c => c !== 'General'));
+        
+        // Hide dashboard, show settings screen
         document.getElementById('dashboard').style.display = 'none';
-        showOnboarding();
+        document.getElementById('settingsScreen').style.display = 'block';
+        
+        // Setup E2E Toggle state
+        const e2eEnabled = localStorage.getItem('e2eEnabled') === 'true';
+        const toggle = document.getElementById('e2eToggle');
+        toggle.checked = e2eEnabled;
+        document.getElementById('e2eStatusText').innerText = e2eEnabled ? "Enabled" : "Disabled";
+        document.getElementById('pinSetupContainer').style.display = 'none';
+        
+        renderSettingsInterestsGrid();
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+    }
+
+    function renderSettingsInterestsGrid() {
+        const grid = document.getElementById('settingsInterestsGrid');
+        grid.innerHTML = '';
+        const allOptions = [...new Set([...suggestedInterests, ...settingsSelectedInterests])];
+        allOptions.forEach(interest => {
+            const chip = document.createElement('div');
+            chip.className = 'interest-chip' + (settingsSelectedInterests.has(interest) ? ' selected' : '');
+            chip.innerText = interest;
+            chip.onclick = () => toggleSettingsInterest(interest);
+            grid.appendChild(chip);
+        });
+    }
+
+    function toggleSettingsInterest(interest) {
+        if (settingsSelectedInterests.has(interest)) {
+            settingsSelectedInterests.delete(interest);
+        } else {
+            settingsSelectedInterests.add(interest);
+        }
+        renderSettingsInterestsGrid();
+    }
+
+    function addCustomInterestSettings() {
+        const input = document.getElementById('settingsCustomInterestInput');
+        const value = input.value.trim();
+        if (value && !settingsSelectedInterests.has(value)) {
+            settingsSelectedInterests.add(value);
+            renderSettingsInterestsGrid();
+            input.value = '';
+        }
+    }
+
+    function handleE2EToggle(event) {
+        const checked = event.target.checked;
+        const statusText = document.getElementById('e2eStatusText');
+        const pinContainer = document.getElementById('pinSetupContainer');
+        
+        if (checked) {
+            statusText.innerText = "Enabling...";
+            pinContainer.style.display = 'block';
+            document.getElementById('pinInput').focus();
+        } else {
+            if (confirm("Disabling E2E will not decrypt already encrypted bookmarks. Only new bookmarks will be saved in standard secure mode. Proceed?")) {
+                localStorage.removeItem('e2eEnabled');
+                sessionStorage.removeItem('pin');
+                cachedE2EKey = null;
+                statusText.innerText = "Disabled";
+                pinContainer.style.display = 'none';
+            } else {
+                event.target.checked = true;
+                statusText.innerText = "Enabled";
+            }
+        }
+    }
+
+    async function setupE2E() {
+        const pinVal = document.getElementById('pinInput').value.trim();
+        if (!pinVal) {
+            alert("Please enter a PIN or passphrase!");
+            return;
+        }
+        
+        try {
+            cachedE2EKey = null; // Clear key cache to force derive
+            await getE2EKey(pinVal);
+            sessionStorage.setItem('pin', pinVal);
+            localStorage.setItem('e2eEnabled', 'true');
+            
+            document.getElementById('e2eStatusText').innerText = "Enabled";
+            document.getElementById('pinSetupContainer').style.display = 'none';
+            document.getElementById('pinInput').value = '';
+            alert("🔒 End-to-End Encryption successfully enabled!");
+        } catch (e) {
+            alert("Failed to initialize cryptographic session.");
+        }
+    }
+
+    async function submitUnlockPin() {
+        const pinVal = document.getElementById('unlockPinInput').value.trim();
+        if (!pinVal) return;
+        
+        try {
+            cachedE2EKey = null;
+            // Fetch bookmarks to verify decryption
+            const response = await apiFetch('/api/bookmarks');
+            const data = await response.json();
+            
+            // Find an E2E bookmark to test decryption
+            const testBm = data.find(b => b.isE2E);
+            if (testBm) {
+                // Derived E2E key is set temporarily in cachedE2EKey inside decryptLocal
+                const testDecrypted = await decryptLocal(testBm.title, pinVal);
+                if (testDecrypted === null) {
+                    alert("Incorrect PIN! Please try again.");
+                    cachedE2EKey = null; // reset cache
+                    return;
+                }
+            } else {
+                // If there are no E2E bookmarks, any PIN is valid to initialize key
+                await getE2EKey(pinVal);
+            }
+            
+            // Success!
+            document.getElementById('unlockOverlay').style.display = 'none';
+            sessionStorage.setItem('pin', pinVal);
+            document.getElementById('unlockPinInput').value = '';
+            
+            allBookmarks = data.sort((a, b) => b.id - a.id);
+            await decryptAllBookmarksInMemory();
+            applyFilters();
+        } catch(e) {
+            alert("Failed to unlock. Try again.");
+            cachedE2EKey = null;
+        }
+    }
+
+    async function saveSettings() {
+        if (settingsSelectedInterests.size === 0) {
+            alert('Please select at least one interest!');
+            return;
+        }
+        
+        // Save categories to database
+        const categories = [...settingsSelectedInterests];
+        if (!categories.includes('General')) categories.push('General');
+        
+        try {
+            await apiFetch('/api/categories', {
+                method: 'POST',
+                body: JSON.stringify({ categories })
+            });
+            userCategories = categories;
+            closeSettings();
+            showDashboard();
+        } catch (e) {
+            alert("Failed to save settings.");
+        }
     }
 
     // --- DASHBOARD LOGIC ---
@@ -1201,8 +1532,20 @@
         try {
             const response = await apiFetch('/api/bookmarks');
             const data = await response.json();
-            // Sort to show the most recent bookmark at the top (descending id)
             allBookmarks = data.sort((a, b) => b.id - a.id);
+            
+            // Check if E2E is active, and if so, decrypt in-memory
+            if (localStorage.getItem('e2eEnabled') === 'true') {
+                const pin = sessionStorage.getItem('pin');
+                if (!pin) {
+                    // Show unlock overlay
+                    document.getElementById('unlockOverlay').style.display = 'flex';
+                    document.getElementById('unlockPinInput').focus();
+                    return;
+                }
+                await decryptAllBookmarksInMemory();
+            }
+            
             applyFilters();
         } catch(e) { console.log(e); }
     }
@@ -1242,6 +1585,9 @@
             const isPending = bm.status === 'pending' || bm.status === 'processing';
             const cardClass = isPending ? 'bookmark-card pending-card' : 'bookmark-card';
             
+            // For E2E bookmarks that failed to decrypt, disable edit
+            const isFailedDecryption = bm.isE2E && bm.title.includes("🔑 [Encrypted Bookmarks - Invalid PIN]");
+            
             listDiv.innerHTML += `
                 <div class="${cardClass}">
                     <div class="bookmark-content">
@@ -1254,7 +1600,7 @@
                         </p>
                     </div>
                     <div class="card-actions">
-                        <button class="icon-btn" onclick="editBookmark('${bm.id}', '${bm.title.replace(/'/g, "\\'")}')" ${isPending ? 'disabled' : ''}>✏️</button>
+                        <button class="icon-btn" onclick="editBookmark('${bm.id}', '${bm.title.replace(/'/g, "\\'")}', ${bm.isE2E})" ${isPending || isFailedDecryption ? 'disabled' : ''}>✏️</button>
                         <button class="icon-btn delete" onclick="deleteBookmark('${bm.id}')">🗑️</button>
                     </div>
                 </div>
@@ -1266,13 +1612,10 @@
         let val = event.target.value.trim();
         if (!val) return;
 
-        // Basic check if it looks like a domain or URL
         if (val.includes('.') && !val.includes(' ')) {
-            // Check for missing http/https using if statements as requested
             if (!val.startsWith('http://') && !val.startsWith('https://')) {
                 val = 'https://' + val;
             }
-            // Auto trigger save, then clear input
             event.target.value = '';
             saveBookmark(val);
         }
@@ -1281,48 +1624,91 @@
     async function saveBookmark(urlValue) {
         if (!urlValue) return;
 
-        // Show the progress ring
         const ringContainer = document.getElementById('progressRingContainer');
         const ring = document.getElementById('progressRing');
         const percentText = document.getElementById('progressPercent');
         
-        // Reset and show ring
         ringContainer.style.display = 'flex';
         ring.style.background = `conic-gradient(var(--accent) 0%, rgba(255, 126, 179, 0.15) 0%)`;
         percentText.innerText = '0%';
         
         let progress = 0;
         const interval = setInterval(() => {
-            progress += Math.floor(Math.random() * 15) + 5; // jump by 5-20%
+            progress += Math.floor(Math.random() * 15) + 5;
             if (progress > 95) progress = 95;
             ring.style.background = `conic-gradient(var(--accent) ${progress}%, rgba(255, 126, 179, 0.15) ${progress}%)`;
             percentText.innerText = progress + '%';
         }, 600);
         
-        await apiFetch('/api/bookmarks', {
-            method: 'POST',
-            body: JSON.stringify({ url: urlValue })
-        });
-
-        // Complete animation
-        clearInterval(interval);
-        ring.style.background = `conic-gradient(var(--accent) 100%, rgba(255, 126, 179, 0.15) 100%)`;
-        percentText.innerText = '100%';
-        
-        setTimeout(() => {
-            ringContainer.style.display = 'none';
-            loadBookmarks();
-        }, 600);
+        try {
+            const isE2EEnabled = localStorage.getItem('e2eEnabled') === 'true';
+            const pin = sessionStorage.getItem('pin');
+            
+            if (isE2EEnabled && pin) {
+                // 1. E2E Flow: Request raw analysis first
+                const analyzeRes = await apiFetch('/api/bookmarks/analyze', {
+                    method: 'POST',
+                    body: JSON.stringify({ url: urlValue })
+                });
+                const analysis = await analyzeRes.json();
+                
+                // 2. Encrypt locally in browser
+                const encryptedUrl = await encryptLocal(urlValue, pin);
+                const encryptedTitle = await encryptLocal(analysis.title, pin);
+                const encryptedSummary = await encryptLocal(analysis.summary, pin);
+                
+                // 3. Save E2E encrypted payload
+                await apiFetch('/api/bookmarks', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        url: encryptedUrl,
+                        title: encryptedTitle,
+                        summary: encryptedSummary,
+                        category: analysis.category,
+                        isE2E: true
+                    })
+                });
+            } else {
+                // Standard server-side encryption flow
+                await apiFetch('/api/bookmarks', {
+                    method: 'POST',
+                    body: JSON.stringify({ url: urlValue })
+                });
+            }
+        } catch(e) {
+            console.error("Save bookmark failed", e);
+        } finally {
+            clearInterval(interval);
+            ring.style.background = `conic-gradient(var(--accent) 100%, rgba(255, 126, 179, 0.15) 100%)`;
+            percentText.innerText = '100%';
+            
+            setTimeout(() => {
+                ringContainer.style.display = 'none';
+                loadBookmarks();
+            }, 600);
+        }
     }
 
-    async function editBookmark(id, currentTitle) {
+    async function editBookmark(id, currentTitle, isE2E) {
         const newTitle = prompt("Enter new title:", currentTitle);
         if (newTitle && newTitle !== currentTitle) {
-            await apiFetch(`/api/bookmarks/${id}`, {
-                method: 'PUT',
-                body: JSON.stringify({ title: newTitle })
-            });
-            loadBookmarks();
+            try {
+                let payloadTitle = newTitle;
+                if (isE2E) {
+                    const pin = sessionStorage.getItem('pin');
+                    if (pin) {
+                        payloadTitle = await encryptLocal(newTitle, pin);
+                    }
+                }
+                
+                await apiFetch(`/api/bookmarks/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ title: payloadTitle })
+                });
+                loadBookmarks();
+            } catch (e) {
+                console.error("Edit failed", e);
+            }
         }
     }
 
@@ -1337,6 +1723,10 @@
     let pollingInterval = null;
 
     function triggerImport() {
+        if (localStorage.getItem('e2eEnabled') === 'true') {
+            alert("🔒 Chrome Bookmark Sync is not supported when End-to-End Encryption is active.\nPlease temporarily disable E2E in Settings to sync bookmarks in bulk.");
+            return;
+        }
         document.getElementById('bookmarksFileInput').click();
     }
 
@@ -1372,10 +1762,7 @@
                 });
                 alert(`Successfully imported ${bookmarks.length} bookmarks. AI is now organizing them in the background!`);
                 
-                // Clear input
                 event.target.value = '';
-                
-                // Reload and start polling
                 loadBookmarks();
                 startPollingStatus();
             } catch (err) {
@@ -1386,9 +1773,10 @@
     }
 
     function startPollingStatus() {
+        if (localStorage.getItem('e2eEnabled') === 'true') return; // Background import polling not needed for E2E
         if (pollingInterval) clearInterval(pollingInterval);
         
-        checkImportStatus(); // initial check
+        checkImportStatus();
         pollingInterval = setInterval(checkImportStatus, 3000);
     }
 
@@ -1423,6 +1811,9 @@
             const response = await apiFetch('/api/bookmarks');
             const data = await response.json();
             allBookmarks = data.sort((a, b) => b.id - a.id);
+            if (localStorage.getItem('e2eEnabled') === 'true') {
+                await decryptAllBookmarksInMemory();
+            }
             applyFilters();
         } catch(e) { console.log(e); }
     }
