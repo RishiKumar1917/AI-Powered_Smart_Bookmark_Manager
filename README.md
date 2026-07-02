@@ -67,4 +67,4 @@ A blazing-fast, visually stunning, and highly secure bookmark manager that uses 
 If you enable **End-to-End Encryption**, your titles, URLs, and summaries are encrypted using AES-GCM directly in your browser. The server and database only ever receive encrypted ciphertext. **Do not lose your PIN**, as it is impossible to decrypt your bookmarks without it.
 
 ---
-*Built with ❤️ and AI.*
+
