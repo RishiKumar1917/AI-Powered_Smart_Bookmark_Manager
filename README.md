@@ -1,10 +1,5 @@
 # 🧠 AI-Powered Smart Bookmark Manager
 
-<div align="center">
-  <img width="700" alt="Dashboard Preview" src="https://github.com/user-attachments/assets/c3a5fc00-3e5e-4b1b-9958-63d8a4388f1d" />
-</div>
-
-<br />
 
 A blazing-fast, visually stunning, and highly secure bookmark manager that uses **Google Gemini AI** to automatically summarize and categorize your saved links. Stop losing your bookmarks in endless folders, and let AI do the organizing for you!
 
