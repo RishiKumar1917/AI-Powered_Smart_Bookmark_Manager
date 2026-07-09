@@ -238,6 +238,38 @@ ${contentForAI}`;
 });
 
 // 4. CREATE: Add a new bookmark (supports both E2E and server-side encryption)
+function getSafeExternalHttpUrl(input: string): string | null {
+  if (typeof input !== 'string' || !input.trim()) return null;
+  try {
+    const parsed = new URL(input.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.username || parsed.password) return null;
+
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return null;
+
+    const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipv4Match) {
+      const octets = ipv4Match.slice(1).map(Number);
+      if (octets.some((o) => o < 0 || o > 255)) return null;
+      const [a, b] = octets;
+      if (
+        a === 10 ||
+        a === 127 ||
+        (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168)
+      ) {
+        return null;
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
   const { url, title, summary, category, isE2E } = req.body;
 
@@ -282,9 +314,10 @@ app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) 
       } catch (e) {}
     }
 
-    if (!bodyText) {
+    const safeUrlForFetch = getSafeExternalHttpUrl(url);
+    if (!bodyText && safeUrlForFetch) {
       try {
-        const response = await fetch('https://r.jina.ai/' + url);
+        const response = await fetch('https://r.jina.ai/' + safeUrlForFetch);
         bodyText = await response.text();
         bodyText = bodyText.substring(0, 3000);
       } catch (error) {
