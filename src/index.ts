@@ -228,8 +228,6 @@ The JSON must have exactly three keys:
 - "category": one of ${categoryList}
 - "summary": a single sentence (max 20 words) summarizing the page
 - "title": a clean, short title for this page (max 8 words)
-
-${contentForAI}`;
 const completion = await groq.chat.completions.create({
   messages: [{ role: "user", content: prompt }],
   model: "llama-3.3-70b-versatile",
@@ -258,7 +256,7 @@ app.post('/api/bookmarks', limiter, requireAuth, async (req: any, res: express.R
 
 // Delete any existing bookmark with the same URL to prevent duplicates
 // Note: For E2E, we delete using the encrypted URL string sent from the client
-await Bookmark.deleteMany({ userId: req.userId, url: { $eq: String(url) } });
+await Bookmark.deleteMany({ userId: req.userId, url: { $eq: String(req.body.url) } });
 
 let newBookmark: any = {
   id: uniqueId,
@@ -268,13 +266,13 @@ let newBookmark: any = {
 };
 if (isE2E) {
   // Save already encrypted payloads directly
-  newBookmark.url = url;
+  newBookmark.url = req.body.url;
   newBookmark.title = title;
   newBookmark.summary = summary;
   newBookmark.category = category || "General";
 } else {
   // Standard server-side encryption flow (Option A)
-  newBookmark.url = encryptServer(url);
+  newBookmark.url = encryptServer(req.body.url);
   newBookmark.title = "Unknown Title";
   newBookmark.category = "General";
   newBookmark.summary = encryptServer("No summary available.");
@@ -282,13 +280,33 @@ if (isE2E) {
   let bodyText = req.body.pageText || '';
 
   // oEmbed for YouTube
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  const ytMatch = req.body.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
   if (ytMatch) {
     try {
       const allowedDomains = ['https://www.youtube.com'];
-      const parsedUrl = new URL(url);
+      const parsedUrl = new URL(req.body.url);
       if (allowedDomains.includes(parsedUrl.origin)) {
         const oembedUrl = new URL('https://www.youtube.com/oembed');
+        const params = {
+          format: 'json',
+          url: req.body.url
+        };
+        oembedUrl.search = new URLSearchParams(params).toString();
+        const response = await fetch(oembedUrl.toString());
+        if (response.ok) {
+          const data = await response.json();
+          newBookmark.title = data.title;
+          newBookmark.summary = data.description;
+        }
+      }
+    } catch (error) {
+      console.log("Error fetching oEmbed data:", error);
+    }
+  }
+}
+await Bookmark.create(newBookmark);
+res.json(newBookmark);
+});
         const params = {
           url: url,
           format: 'json'
