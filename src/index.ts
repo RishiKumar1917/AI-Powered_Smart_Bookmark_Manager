@@ -270,6 +270,21 @@ function getSafeExternalHttpUrl(input: string): string | null {
   }
 }
 
+function isAllowedScrapeTarget(input: string): boolean {
+  try {
+    const host = new URL(input).hostname.toLowerCase();
+    const allowedHosts = new Set([
+      'youtube.com',
+      'www.youtube.com',
+      'm.youtube.com',
+      'youtu.be'
+    ]);
+    return allowedHosts.has(host);
+  } catch {
+    return false;
+  }
+}
+
 app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
   const { url, title, summary, category, isE2E } = req.body;
 
@@ -315,9 +330,10 @@ app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) 
     }
 
     const safeUrlForFetch = getSafeExternalHttpUrl(url);
-    if (!bodyText && safeUrlForFetch) {
+    if (!bodyText && safeUrlForFetch && isAllowedScrapeTarget(safeUrlForFetch)) {
       try {
-        const response = await fetch('https://r.jina.ai/' + safeUrlForFetch);
+        const proxyUrl = `https://r.jina.ai/http://r.jina.ai/http://?target=${encodeURIComponent(safeUrlForFetch)}`;
+        const response = await fetch(proxyUrl);
         bodyText = await response.text();
         bodyText = bodyText.substring(0, 3000);
       } catch (error) {
