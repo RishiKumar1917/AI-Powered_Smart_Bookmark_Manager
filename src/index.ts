@@ -52,6 +52,7 @@ app.use(cors());
 app.use(express.json()); // CRITICAL: This allows us to read JSON data sent to us
 app.use(express.static('public')); // This tells Express to show our index.html!
 
+const rateLimit = require('express-rate-limit');
 
 // 1. Connect to MongoDB and Create Schema
 mongoose.connect(process.env.MONGODB_URI || '')
@@ -81,8 +82,13 @@ const User = mongoose.model('User', userSchema);
 
 // --- AUTHENTICATION ROUTES ---
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
 // 1. Verify Google Login Token & Return our own JWT
-app.post('/api/auth/google', async (req: express.Request, res: express.Response): Promise<any> => {
+app.post('/api/auth/google', apiLimiter, async (req: express.Request, res: express.Response): Promise<any> => {
   const { credential } = req.body;
   try {
     const ticket = await googleClient.verifyIdToken({
@@ -113,6 +119,7 @@ const requireAuth = (req: any, res: express.Response, next: express.NextFunction
 
   try {
     const decoded: any = jwt.verify(token, JWT_SECRET);
+    // ... rest of the code remains the same ...
     req.userId = decoded.userId;
     next();
   } catch (err) {
@@ -208,6 +215,139 @@ app.post('/api/bookmarks/analyze', requireAuth, async (req: any, res: express.Re
         : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
 
     const categoryList = JSON.stringify(userCategories);
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+});
+
+const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
+
+The JSON must have exactly three keys:
+- "category": one of ${categoryList}
+- "summary": a single sentence (max 20 words) summarizing the page
+- "title": a clean, short title for this page (max 8 words)
+
+${contentForAI}`;
+const completion = await groq.chat.completions.create({
+  messages: [{ role: "user", content: prompt }],
+  model: "llama-3.3-70b-versatile",
+  temperature: 0.1,
+});
+
+const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
+const parsed = JSON.parse(aiText);
+if (parsed.category) analysis.category = parsed.category;
+if (parsed.summary) analysis.summary = parsed.summary;
+if (analysis.title === "Unknown Title" && parsed.title) {
+  analysis.title = parsed.title;
+}
+} catch (error) {
+  console.log("Analysis AI failed:", error);
+}
+
+res.json(analysis);
+});
+
+app.post('/api/bookmarks', limiter, requireAuth, async (req: any, res: express.Response) => {
+  const { url, title, summary, category, isE2E } = req.body;
+
+  // Generate a unique ID
+  const uniqueId = Date.now().toString();
+
+// Delete any existing bookmark with the same URL to prevent duplicates
+// Note: For E2E, we delete using the encrypted URL string sent from the client
+await Bookmark.deleteMany({ userId: req.userId, url: { $eq: String(url) } });
+
+let newBookmark: any = {
+  id: uniqueId,
+  userId: req.userId,
+  status: 'completed',
+  isE2E: !!isE2E
+};
+if (isE2E) {
+  // Save already encrypted payloads directly
+  newBookmark.url = url;
+  newBookmark.title = title;
+  newBookmark.summary = summary;
+  newBookmark.category = category || "General";
+} else {
+  // Standard server-side encryption flow (Option A)
+  newBookmark.url = encryptServer(url);
+  newBookmark.title = "Unknown Title";
+  newBookmark.category = "General";
+  newBookmark.summary = encryptServer("No summary available.");
+
+  let bodyText = req.body.pageText || '';
+
+  // oEmbed for YouTube
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (ytMatch) {
+    try {
+      const allowedDomains = ['https://www.youtube.com'];
+      const parsedUrl = new URL(url);
+      if (allowedDomains.includes(parsedUrl.origin)) {
+        const oembedUrl = new URL('https://www.youtube.com/oembed');
+        const params = {
+          url: url,
+          format: 'json'
+        };
+        oembedUrl.search = new URLSearchParams(params).toString();
+        const response = await fetch(oembedUrl.toString());
+        if (response.ok) {
+          const data = await response.json();
+          if (data.title) newBookmark.title = data.title;
+          if (data.description) newBookmark.summary = data.description;
+        }
+      }
+    } catch (error) {
+      console.log("oEmbed failed:", error);
+    }
+  }
+}
+        oembedUrl.searchParams.set('url', encodeURIComponent(url));
+        oembedUrl.searchParams.set('format', 'json');
+        const oembedRes = await fetch(oembedUrl.toString());
+        if (oembedRes.ok) {
+          const oembedData = await oembedRes.json() as any;
+          newBookmark.title = oembedData.title || newBookmark.title;
+        }
+      } else {
+        console.log("Invalid domain:", parsedUrl.origin);
+      }
+    } catch (e) {
+      console.log("Error fetching oembed data:", e);
+    }
+  }
+
+  if (!bodyText) {
+    const allowedDomains = ['https://example.com', 'https://www.example.com'];
+    const parsedUrl = new URL(url);
+    const targetUrl = 'https://r.jina.ai/' + url;
+    const targetParsedUrl = new URL(targetUrl);
+    if (allowedDomains.includes(targetParsedUrl.origin)) {
+      try {
+        const response = await fetch(targetUrl);
+        bodyText = await response.text();
+        bodyText = bodyText.substring(0, 3000);
+      } catch (error) {
+        console.log("Scrape failed:", url);
+      }
+    } else {
+      console.log("Invalid domain:", targetParsedUrl.origin);
+    }
+  }
+
+  const user = await User.findOne({ userId: req.userId });
+  const userCategories = user?.categories?.length ? user.categories : ['General'];
+
+  try {
+    const contentForAI = bodyText.length > 50
+        ? `URL: ${url}\nWebpage content: ${bodyText}`
+        : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
+
+    const categoryList = JSON.stringify(userCategories);
     const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
 
 The JSON must have exactly three keys:
@@ -222,137 +362,61 @@ ${contentForAI}`;
       model: "llama-3.3-70b-versatile",
       temperature: 0.1,
     });
-    
-    const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
-    const parsed = JSON.parse(aiText);
-    if (parsed.category) analysis.category = parsed.category;
-    if (parsed.summary) analysis.summary = parsed.summary;
-    if (analysis.title === "Unknown Title" && parsed.title) {
-      analysis.title = parsed.title;
-    }
   } catch (error) {
-    console.log("Analysis AI failed:", error);
+    console.log("Error occurred:", error);
   }
+}
+const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
+const parsed = JSON.parse(aiText);
+newBookmark.category = parsed.category || newBookmark.category;
+newBookmark.summary = encryptServer(parsed.summary || "No summary available.");
+if (newBookmark.title === "Unknown Title" && parsed.title) {
+  newBookmark.title = parsed.title;
+}
+} catch (error) {
+  console.log("AI failed:", error);
+}
 
-  res.json(analysis);
-});
-
-// 4. CREATE: Add a new bookmark (supports both E2E and server-side encryption)
-app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
-  const { url, title, summary, category, isE2E } = req.body;
-
-  // Generate a unique ID
-  const uniqueId = Date.now().toString();
-
-  // Delete any existing bookmark with the same URL to prevent duplicates
-  // Note: For E2E, we delete using the encrypted URL string sent from the client
-  await Bookmark.deleteMany({ userId: req.userId, url: url });
-
-  let newBookmark: any = {
-    id: uniqueId,
-    userId: req.userId,
-    status: 'completed',
-    isE2E: !!isE2E
-  };
-
-  if (isE2E) {
-    // Save already encrypted payloads directly
-    newBookmark.url = url;
-    newBookmark.title = title;
-    newBookmark.summary = summary;
-    newBookmark.category = category || "General";
-  } else {
-    // Standard server-side encryption flow (Option A)
-    newBookmark.url = encryptServer(url);
-    newBookmark.title = "Unknown Title";
-    newBookmark.category = "General";
-    newBookmark.summary = encryptServer("No summary available.");
-
-    let bodyText = req.body.pageText || '';
-
-    // oEmbed for YouTube
-    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-    if (ytMatch) {
-      try {
-        const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
-        if (oembedRes.ok) {
-          const oembedData = await oembedRes.json() as any;
-          newBookmark.title = oembedData.title || newBookmark.title;
-        }
-      } catch (e) {}
-    }
-
-    if (!bodyText) {
-      try {
-        const response = await fetch('https://r.jina.ai/' + url);
-        bodyText = await response.text();
-        bodyText = bodyText.substring(0, 3000);
-      } catch (error) {
-        console.log("Scrape failed:", url);
-      }
-    }
-
-    const user = await User.findOne({ userId: req.userId });
-    const userCategories = user?.categories?.length ? user.categories : ['General'];
-
-    try {
-      const contentForAI = bodyText.length > 50
-          ? `URL: ${url}\nWebpage content: ${bodyText}`
-          : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
-
-      const categoryList = JSON.stringify(userCategories);
-      const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
-
-The JSON must have exactly three keys:
-- "category": one of ${categoryList}
-- "summary": a single sentence (max 20 words) summarizing the page
-- "title": a clean, short title for this page (max 8 words)
-
-${contentForAI}`;
-
-      const completion = await groq.chat.completions.create({
-        messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.1,
-      });
-      
-      const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
-      const parsed = JSON.parse(aiText);
-      newBookmark.category = parsed.category || newBookmark.category;
-      newBookmark.summary = encryptServer(parsed.summary || "No summary available.");
-      if (newBookmark.title === "Unknown Title" && parsed.title) {
-        newBookmark.title = parsed.title;
-      }
-    } catch (error) {
-      console.log("AI failed:", error);
-    }
-
-    newBookmark.title = encryptServer(newBookmark.title);
-  }
-
-  const dbBookmark = new Bookmark(newBookmark);
-  await dbBookmark.save();
-
-  // Decrypt if server-side encrypted before sending response
-  const responseBookmark = dbBookmark.toObject();
-  if (!responseBookmark.isE2E) {
-    responseBookmark.url = decryptServer(responseBookmark.url);
-    responseBookmark.title = decryptServer(responseBookmark.title);
-    responseBookmark.summary = decryptServer(responseBookmark.summary);
-  }
-
-  res.json({ message: "Bookmark saved!", bookmark: responseBookmark });
+newBookmark.title = encryptServer(newBookmark.title);
+}
+  
+const dbBookmark = new Bookmark(newBookmark);
+await dbBookmark.save();
+  
+// Decrypt if server-side encrypted before sending response
+const responseBookmark = dbBookmark.toObject();
+if (!responseBookmark.isE2E) {
+  responseBookmark.url = decryptServer(responseBookmark.url);
+  responseBookmark.title = decryptServer(responseBookmark.title);
+  responseBookmark.summary = decryptServer(responseBookmark.summary);
+}
+  
+res.json({ message: "Bookmark saved!", bookmark: responseBookmark });
 });
 
 // 5. DELETE: Remove a bookmark
-app.delete('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Response) => {
+const deleteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.delete('/api/bookmarks/:id', requireAuth, deleteLimiter, async (req: any, res: express.Response) => {
   const idToDelete = req.params.id;
   await Bookmark.deleteOne({ id: idToDelete, userId: req.userId });
   res.json({ message: "Bookmark deleted successfully!" });
 });
 
+// Import rate limiter
+const rateLimit = require('express-rate-limit');
+
+// Create rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
 // 6. UPDATE: Edit an existing bookmark (supports E2E encrypted updates)
-app.put('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Response): Promise<any> => {
+app.put('/api/bookmarks/:id', requireAuth, limiter, async (req: any, res: express.Response): Promise<any> => {
   const idToUpdate = req.params.id;
   const { title, category } = req.body;
 
@@ -368,6 +432,7 @@ app.put('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Respons
     // Server-side encryption
     if (title) bookmark.title = encryptServer(title);
   }
+  }
   
   if (category) bookmark.category = category;
 
@@ -382,7 +447,6 @@ app.put('/api/bookmarks/:id', requireAuth, async (req: any, res: express.Respons
 
   res.json({ message: "Bookmark updated successfully!", bookmark: responseBookmark });
 });
-
 // 7. GET IMPORT STATUS
 app.get('/api/bookmarks/import-status', requireAuth, async (req: any, res: express.Response) => {
   const count = await Bookmark.countDocuments({
@@ -392,8 +456,17 @@ app.get('/api/bookmarks/import-status', requireAuth, async (req: any, res: expre
   res.json({ pendingCount: count });
 });
 
+// Import express-rate-limit
+const rateLimit = require('express-rate-limit');
+
+// Create a rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per window per IP
+});
+
 // 8. IMPORT: Supports background server-side encryption (Option A)
-app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Response): Promise<any> => {
+app.post('/api/bookmarks/import', requireAuth, limiter, async (req: any, res: express.Response): Promise<any> => {
   const { bookmarks } = req.body;
   if (!Array.isArray(bookmarks)) {
     return res.status(400).json({ error: "Invalid bookmarks array format" });
@@ -407,11 +480,12 @@ app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Res
     
     // Server-side encrypt the pending bookmark immediately
     const encryptedUrl = encryptServer(item.url);
-    await Bookmark.deleteMany({ userId, url: encryptedUrl });
+    const filter = { userId: String(userId), url: String(encryptedUrl) };
+    await Bookmark.deleteMany(filter);
 
     const newBm = new Bookmark({
       id: uniqueId,
-      userId,
+      userId: String(userId),
       url: encryptedUrl,
       title: encryptServer(item.title || "Untitled Link"),
       category: "General",
@@ -425,10 +499,9 @@ app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Res
   }
 
   res.json({ message: "Import started", count: insertedBookmarks.length });
-
   // Background worker loop
   void (async () => {
-    const user = await User.findOne({ userId });
+    const user = await User.findOne({ userId: String(userId) });
     const userCategories = user?.categories?.length ? user.categories : ['General'];
     const categoryList = JSON.stringify(userCategories);
 
@@ -440,52 +513,82 @@ app.post('/api/bookmarks/import', requireAuth, async (req: any, res: express.Res
         let bodyText = "";
         let finalTitle = decryptServer(bm.title) || "Untitled Link";
 
-        const ytMatch = decryptedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
-        let ytTitle = "";
-        if (ytMatch) {
-          try {
-            const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(decryptedUrl)}&format=json`);
-            if (oembedRes.ok) {
-              const oembedData = await oembedRes.json() as any;
-              ytTitle = oembedData.title || "";
-              finalTitle = ytTitle;
-            }
-          } catch (e) {}
-        }
+const ytMatch = decryptedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+let ytTitle = "";
+if (ytMatch) {
+try {
+const allowedDomains = ['https://www.youtube.com'];
+const url = new URL(decryptedUrl);
+if (allowedDomains.includes(url.origin)) {
+const oembedUrl = new URL('https://www.youtube.com/oembed');
+oembedUrl.searchParams.set('url', decryptedUrl);
+oembedUrl.searchParams.set('format', 'json');
+const oembedRes = await fetch(oembedUrl.toString());
+if (oembedRes.ok) {
+const oembedData = await oembedRes.json() as any;
+ytTitle = oembedData.title || "";
+finalTitle = ytTitle;
+}
+} else {
+console.log("Domain not allowed:", decryptedUrl);
+}
+} catch (e) {
+console.log("Error fetching oembed data:", e);
+}
+}
 
-        if (!ytTitle) {
-          try {
-            const response = await fetch('https://r.jina.ai/' + decryptedUrl);
-            bodyText = await response.text();
-            bodyText = bodyText.substring(0, 3000);
-          } catch (error) {
-            console.log("Could not background scrape:", decryptedUrl);
-          }
-        }
+if (!ytTitle) {
+try {
+const allowedDomains = ['https://example.com', 'https://www.example.com']; 
+const url = new URL(decryptedUrl);
+if (allowedDomains.includes(url.origin)) {
+const response = await fetch(decryptedUrl);
+bodyText = await response.text();
+bodyText = bodyText.substring(0, 3000);
+} else {
+console.log("Domain not allowed:", decryptedUrl);
+}
+} catch (error) {
+console.log("Could not background scrape:", decryptedUrl);
+}
+}
 
-        const contentForAI = bodyText.length > 50
-          ? `URL: ${decryptedUrl}\nWebpage content: ${bodyText}`
-          : `URL: ${decryptedUrl} (Note: Could not scrape page content, please analyze based on URL only)`;
+const contentForAI = bodyText.length > 50
+? `URL: ${decryptedUrl}\nWebpage content: ${bodyText}`
+: `URL: ${decryptedUrl} (Note: Could not scrape page content, please analyze based on URL only)`;
 
-        const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
+const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
 
 The JSON must have exactly three keys:
+title
+description
+tags
+Your response should be in this format:
+\`
+{
+"title": "",
+"description": "",
+"tags": []
+}
+\`
+Analyze the webpage: ${contentForAI}
+And provide your response in the above format.`;
 - "category": one of ${categoryList}
 - "summary": a single sentence (max 20 words) summarizing the page
 - "title": a clean, short title for this page (max 8 words)
 
 ${contentForAI}`;
 
-        const completion = await groq.chat.completions.create({
-          messages: [{ role: "user", content: prompt }],
-          model: "llama-3.3-70b-versatile",
-          temperature: 0.1,
-        });
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+      });
 
-        const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
-        const parsed = JSON.parse(aiText);
+      const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
+      const parsed = JSON.parse(aiText);
 
-        await Bookmark.updateOne({ id: bm.id }, {
+      await Bookmark.updateOne({ id: bm.id }, {
           url: encryptServer(decryptedUrl),
           title: encryptServer(parsed.title || finalTitle),
           category: parsed.category || "General",
