@@ -111,6 +111,12 @@ app.post('/api/auth/google', apiLimiter, async (req: express.Request, res: expre
     res.status(401).json({ error: 'Authentication failed' });
   }
 });
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
 
 // Middleware to protect routes
 const requireAuth = (req: any, res: express.Response, next: express.NextFunction): any => {
@@ -127,7 +133,7 @@ const requireAuth = (req: any, res: express.Response, next: express.NextFunction
   }
 };
 
-// 2. Health check endpoint (you already did this!)
+// 2. Health check endpoint 
 app.get('/api/health', (_req: express.Request, res: express.Response) => {
   res.json({ status: 'success', message: 'The Bookmark API is alive!' });
 });
@@ -141,7 +147,7 @@ app.get('/api/categories', requireAuth, async (req: any, res: express.Response) 
 });
 
 // Save/update the logged-in user's categories
-app.post('/api/categories', requireAuth, async (req: any, res: express.Response) => {
+app.post('/api/categories', limiter, requireAuth, async (req: any, res: express.Response) => {
   const { categories } = req.body;
   await User.findOneAndUpdate(
     { userId: req.userId },
@@ -167,12 +173,16 @@ app.get('/api/bookmarks', requireAuth, async (req: any, res: express.Response) =
     }
     return obj;
   });
-  
   res.json(processed);
+});
+  return obj;
+});
+  
+res.json(processed);
 });
 
 // 3. ANALYZE (New): Scrape and run AI analysis without saving (essential for E2E flow)
-app.post('/api/bookmarks/analyze', requireAuth, async (req: any, res: express.Response): Promise<any> => {
+app.post('/api/bookmarks/analyze', limiter, requireAuth, async (req: any, res: express.Response): Promise<any> => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: "URL is required" });
 
@@ -188,21 +198,51 @@ app.post('/api/bookmarks/analyze', requireAuth, async (req: any, res: express.Re
   const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
   if (ytMatch) {
     try {
-      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
-      if (oembedRes.ok) {
-        const oembedData = await oembedRes.json() as any;
-        analysis.title = oembedData.title || analysis.title;
+      const allowedDomains = ['www.youtube.com', 'youtu.be'];
+      const urlParts = new URL(url);
+      if (allowedDomains.includes(urlParts.hostname)) {
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+        const oembedRes = await fetch(oembedUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Your App Name'
+          }
+        });
+        if (oembedRes.ok) {
+          const oembedData = await oembedRes.json() as any;
+          analysis.title = oembedData.title || analysis.title;
+        } else {
+          console.log("Failed to fetch oEmbed data:", oembedRes.status);
+        }
       }
-    } catch (e) {}
+    } catch (error) {
+      console.log("Failed to fetch oEmbed data:", error);
+    }
+  }
+}
+        }
+      } else {
+        console.log("Domain not allowed for oEmbed:", url);
+      }
+    } catch (e) {
+      console.log("Error fetching oEmbed data:", e);
+    }
   }
 
   if (!bodyText) {
-    try {
-      const response = await fetch('https://r.jina.ai/' + url);
-      bodyText = await response.text();
-      bodyText = bodyText.substring(0, 3000);
-    } catch (error) {
-      console.log("Analysis scrape failed:", url);
+    const allowedDomains = ['www.example.com', 'example.net']; // add allowed domains here
+    const urlParts = new URL(url);
+    if (allowedDomains.includes(urlParts.hostname)) {
+      try {
+        const response = await fetch(url);
+        bodyText = await response.text();
+        bodyText = bodyText.substring(0, 3000);
+      } catch (error) {
+        console.log("Analysis scrape failed:", url);
+      }
+    } else {
+      console.log("Domain not allowed:", url);
+      return res.status(403).json({ error: "Domain not allowed" });
     }
   }
 
@@ -212,25 +252,27 @@ app.post('/api/bookmarks/analyze', requireAuth, async (req: any, res: express.Re
   try {
     const contentForAI = bodyText.length > 50
         ? `URL: ${url}\nWebpage content: ${bodyText}`
+    } catch (error) {
+      console.log("Error preparing content for AI:", error);
+    }
+});
         : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
 
     const categoryList = JSON.stringify(userCategories);
-const rateLimit = require('express-rate-limit');
+    const rateLimit = require('express-rate-limit');
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
-});
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per window
+    });
 
-const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
+    const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
 
 The JSON must have exactly three keys:
 - "category": one of ${categoryList}
-- "summary": a single sentence (max 20 words) summarizing the page
-- "title": a clean, short title for this page (max 8 words)
-const completion = await groq.chat.completions.create({
-  messages: [{ role: "user", content: prompt }],
-  model: "llama-3.3-70b-versatile",
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
   temperature: 0.1,
 });
 
@@ -256,7 +298,8 @@ app.post('/api/bookmarks', limiter, requireAuth, async (req: any, res: express.R
 
 // Delete any existing bookmark with the same URL to prevent duplicates
 // Note: For E2E, we delete using the encrypted URL string sent from the client
-await Bookmark.deleteMany({ userId: req.userId, url: { $eq: String(req.body.url) } });
+const sanitizedUrl = String(req.body.url);
+await Bookmark.deleteMany({ userId: req.userId, url: sanitizedUrl });
 
 let newBookmark: any = {
   id: uniqueId,
@@ -287,6 +330,22 @@ if (isE2E) {
       const parsedUrl = new URL(req.body.url);
       if (allowedDomains.includes(parsedUrl.origin)) {
         const oembedUrl = new URL('https://www.youtube.com/oembed');
+        const params = {
+          url: req.body.url,
+          format: 'json'
+        };
+        oembedUrl.search = new URLSearchParams(params).toString();
+        const response = await fetch(oembedUrl.toString());
+        const data = await response.json();
+        if (data.title) newBookmark.title = data.title;
+        if (data.description) newBookmark.summary = encryptServer(data.description);
+      }
+    } catch (error) {
+      console.log("YouTube oEmbed failed:", error);
+    }
+  }
+} 
+});
         const params = {
           format: 'json',
           url: req.body.url
