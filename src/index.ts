@@ -454,21 +454,163 @@ if (newBookmark.title === "Unknown Title" && parsed.title) {
   console.log("AI failed:", error);
 }
 
-newBookmark.title = encryptServer(newBookmark.title);
+  res.json(analysis);
+});
+
+// 4. CREATE: Add a new bookmark (supports both E2E and server-side encryption)
+function getSafeExternalHttpUrl(input: string): string | null {
+  if (typeof input !== 'string' || !input.trim()) return null;
+  try {
+    const parsed = new URL(input.trim());
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+    if (parsed.username || parsed.password) return null;
+
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return null;
+
+    const ipv4Match = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipv4Match) {
+      const octets = ipv4Match.slice(1).map(Number);
+      if (octets.some((o) => o < 0 || o > 255)) return null;
+      const [a, b] = octets;
+      if (
+        a === 10 ||
+        a === 127 ||
+        (a === 169 && b === 254) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        (a === 192 && b === 168)
+      ) {
+        return null;
+      }
+    }
+
+    return parsed.toString();
+  } catch {
+    return null;
+  }
 }
-  
-const dbBookmark = new Bookmark(newBookmark);
-await dbBookmark.save();
-  
-// Decrypt if server-side encrypted before sending response
-const responseBookmark = dbBookmark.toObject();
-if (!responseBookmark.isE2E) {
-  responseBookmark.url = decryptServer(responseBookmark.url);
-  responseBookmark.title = decryptServer(responseBookmark.title);
-  responseBookmark.summary = decryptServer(responseBookmark.summary);
+
+function isAllowedScrapeTarget(input: string): boolean {
+  try {
+    const host = new URL(input).hostname.toLowerCase();
+    const allowedHosts = new Set([
+      'youtube.com',
+      'www.youtube.com',
+      'm.youtube.com',
+      'youtu.be'
+    ]);
+    return allowedHosts.has(host);
+  } catch {
+    return false;
+  }
 }
-  
-res.json({ message: "Bookmark saved!", bookmark: responseBookmark });
+
+app.post('/api/bookmarks', requireAuth, async (req: any, res: express.Response) => {
+  const { url, title, summary, category, isE2E } = req.body;
+
+  // Generate a unique ID
+  const uniqueId = Date.now().toString();
+
+  // Delete any existing bookmark with the same URL to prevent duplicates
+  // Note: For E2E, we delete using the encrypted URL string sent from the client
+  await Bookmark.deleteMany({ userId: req.userId, url: url });
+
+  let newBookmark: any = {
+    id: uniqueId,
+    userId: req.userId,
+    status: 'completed',
+    isE2E: !!isE2E
+  };
+
+  if (isE2E) {
+    // Save already encrypted payloads directly
+    newBookmark.url = url;
+    newBookmark.title = title;
+    newBookmark.summary = summary;
+    newBookmark.category = category || "General";
+  } else {
+    // Standard server-side encryption flow (Option A)
+    newBookmark.url = encryptServer(url);
+    newBookmark.title = "Unknown Title";
+    newBookmark.category = "General";
+    newBookmark.summary = encryptServer("No summary available.");
+
+    let bodyText = req.body.pageText || '';
+
+    // oEmbed for YouTube
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    if (ytMatch) {
+      try {
+        const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+        if (oembedRes.ok) {
+          const oembedData = await oembedRes.json() as any;
+          newBookmark.title = oembedData.title || newBookmark.title;
+        }
+      } catch (e) {}
+    }
+
+    const safeUrlForFetch = getSafeExternalHttpUrl(url);
+    if (!bodyText && safeUrlForFetch && isAllowedScrapeTarget(safeUrlForFetch)) {
+      try {
+        const proxyUrl = `https://r.jina.ai/http://r.jina.ai/http://?target=${encodeURIComponent(safeUrlForFetch)}`;
+        const response = await fetch(proxyUrl);
+        bodyText = await response.text();
+        bodyText = bodyText.substring(0, 3000);
+      } catch (error) {
+        console.log("Scrape failed:", url);
+      }
+    }
+
+    const user = await User.findOne({ userId: req.userId });
+    const userCategories = user?.categories?.length ? user.categories : ['General'];
+
+    try {
+      const contentForAI = bodyText.length > 50
+          ? `URL: ${url}\nWebpage content: ${bodyText}`
+          : `URL: ${url} (Note: Could not scrape page content, please analyze based on URL only)`;
+
+      const categoryList = JSON.stringify(userCategories);
+      const prompt = `You are a bookmark assistant. Analyze this webpage and return ONLY a valid JSON object (no markdown, no code blocks, no extra text).
+
+The JSON must have exactly three keys:
+- "category": one of ${categoryList}
+- "summary": a single sentence (max 20 words) summarizing the page
+- "title": a clean, short title for this page (max 8 words)
+
+${contentForAI}`;
+
+      const completion = await groq.chat.completions.create({
+        messages: [{ role: "user", content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        temperature: 0.1,
+      });
+      
+      const aiText = completion.choices[0]?.message?.content?.trim() || "{}";
+      const parsed = JSON.parse(aiText);
+      newBookmark.category = parsed.category || newBookmark.category;
+      newBookmark.summary = encryptServer(parsed.summary || "No summary available.");
+      if (newBookmark.title === "Unknown Title" && parsed.title) {
+        newBookmark.title = parsed.title;
+      }
+    } catch (error) {
+      console.log("AI failed:", error);
+    }
+
+    newBookmark.title = encryptServer(newBookmark.title);
+  }
+
+  const dbBookmark = new Bookmark(newBookmark);
+  await dbBookmark.save();
+
+  // Decrypt if server-side encrypted before sending response
+  const responseBookmark = dbBookmark.toObject();
+  if (!responseBookmark.isE2E) {
+    responseBookmark.url = decryptServer(responseBookmark.url);
+    responseBookmark.title = decryptServer(responseBookmark.title);
+    responseBookmark.summary = decryptServer(responseBookmark.summary);
+  }
+
+  res.json({ message: "Bookmark saved!", bookmark: responseBookmark });
 });
 
 // 5. DELETE: Remove a bookmark
