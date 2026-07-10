@@ -1860,7 +1860,7 @@
                         </p>
                     </div>
                     <div class="card-actions">
-                        <button class="icon-btn" onclick="editBookmark('${bm.id}', '${bm.title.replace(/'/g, "\\'")}', ${bm.isE2E})" ${isPending || isFailedDecryption ? 'disabled' : ''}>✏️</button>
+                        <button class="icon-btn" onclick='editBookmark(${JSON.stringify(bm.id)}, ${JSON.stringify(bm.title)}, ${JSON.stringify(bm.isE2E)})' ${isPending || isFailedDecryption ? 'disabled' : ''}>✏️</button>
                         <button class="icon-btn delete" onclick="deleteBookmark('${bm.id}')">🗑️</button>
                     </div>
                 </div>
